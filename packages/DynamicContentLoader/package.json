@@ -1,5 +1,5 @@
 {
-  "name": "@helga-agentur/dynamic-content-loader",
+  "name": "@helga-agency/dynamic-content-loader",
   "version": "1.0.0",
   "description": "Extensible, loosely coupled custom elements that load content asynchronously, e.g. for filtered search results",
   "main": "main.js",

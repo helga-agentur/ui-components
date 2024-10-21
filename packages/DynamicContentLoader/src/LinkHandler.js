@@ -1,7 +1,9 @@
+/* global customElements, CustomEvent, window */
+
 /**
  * 
  */
-export default class ContentHandler extends HTMLElement {
+export default class LinkHandler extends HTMLElement {
     connectedCallback() {
         this.#addClickListener();
     }
@@ -24,16 +26,21 @@ export default class ContentHandler extends HTMLElement {
         this.dispatchEvent(new CustomEvent('loadContent', {
             bubbles: true,
             detail: {
-                queryString,
+                requestConfiguration: {
+                    queryString,
+                    // TODO! Would help with infinite scrolling.
+                    mode: 'append',
+                },
             },
         }));
         console.log('load event dispatched');
+        return true;
     }
 
     static defineCustomElement() {
         if (!customElements.get('link-handler')) {
-            customElements.define('link-handler', ContentHandler);
-        }        
+            customElements.define('link-handler', LinkHandler);
+        }
     }
 }
 

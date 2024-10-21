@@ -1,9 +1,7 @@
 /* global customElements, HTMLElement */
 
-// eslint-disable-next-line import/extensions
-import Request from './Request';
-// eslint-disable-next-line import/extensions
-import RequestPool from './RequestPool';
+import Request from './Request.mjs';
+import RequestPool from './RequestPool.mjs';
 
 /**
  * Connects everything when it comes to Facets / dynamic UI filters:
@@ -36,8 +34,7 @@ export default class DynamicContentOrchestrator extends HTMLElement {
     }
 
     /**
-     * Handles loadDynamicContent events
-     * @param {{ detail: { requestConfiguration: { queryString: QueryString} }}} param0
+     * @param {{ detail: { requestConfiguration: { queryString: QueryString } }}} param
      */
     #loadContent({ detail: { requestConfiguration } } = {}) {
         // Argument checking is done in RequestPool
