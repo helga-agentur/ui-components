@@ -2,7 +2,7 @@
   "name": "@helga-agency/dynamic-content-loader",
   "version": "1.0.0",
   "description": "Extensible, loosely coupled custom elements that load content asynchronously, e.g. for filtered search results",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
     "test": "npx ava --verbose",
     "build": "npx rollup --c rollup.config.mjs"

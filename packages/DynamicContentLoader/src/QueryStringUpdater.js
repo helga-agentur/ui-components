@@ -13,22 +13,23 @@ export default class QueryStringUpdater extends HTMLElement {
      * calls.
      */
     async #emitAddHandlerEvent() {
-        // Make sure the event is only fired after surrounding DynamicContentLoader is ready,
+        // Make sure the event is only fired *after* surrounding DynamicContentLoader is ready,
         // even the script that defines it is loaded after this one.
-        await new Promise((resolve) => setTimeout(resolve));
+        await new Promise((resolve) => { setTimeout(resolve); });
         this.dispatchEvent(new CustomEvent('addDynamicContentHandler', {
             bubbles: true,
             detail: {
-                updateResponseStatus: this.#updateResponseStatus.bind(this),
-                assembleURL: () => null,
+                updateResponseStatus: () => {},
+                assembleURL: QueryStringUpdater.#updateResponseStatus,
             },
         }));
     }
 
-    #updateResponseStatus(statusUpdate) {
-        if (statusUpdate.status !== 'loading') return;
+    static #updateResponseStatus({ searchParams }) {
         // eslint-disable-next-line no-restricted-globals
-        history.pushState(null, '', statusUpdate.requestConfiguration.queryString);
+        history.pushState(null, '', `?${searchParams.toString()}`);
+        // Dont' fetch anything
+        return null;
     }
 
     static defineCustomElement() {
@@ -37,4 +38,3 @@ export default class QueryStringUpdater extends HTMLElement {
         }
     }
 }
-

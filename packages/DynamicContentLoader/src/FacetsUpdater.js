@@ -1,17 +1,10 @@
 /* global HTMLElement, customElements, CustomEvent, requestAnimationFrame */
 
 /**
- * Updates the facet (expected amount of results) on checkboxes.
+ * Updates the facet (expected amount of results) on checkboxes provided by Drupal.
  * Needs DynamicContentLoader to work.
  */
 export default class FacetsUpdater extends HTMLElement {
-
-    /**
-     * Holds the base URL of the endpoint; queryString will be added
-     * @type {string}
-     */
-    #endpointUrl;
-
     connectedCallback() {
         this.#emitAddEvent();
     }
@@ -23,7 +16,7 @@ export default class FacetsUpdater extends HTMLElement {
     async #emitAddEvent() {
         // Make sure the event is only fired after surrounding DynamicContentLoader is ready,
         // even the script that defines it is loaded after this one.
-        await new Promise((resolve) => setTimeout(resolve));
+        await new Promise((resolve) => { setTimeout(resolve); });
         this.dispatchEvent(new CustomEvent('addDynamicContentHandler', {
             bubbles: true,
             detail: {
@@ -71,7 +64,6 @@ export default class FacetsUpdater extends HTMLElement {
             );
             return;
         }
-        // TODO: How free are we with that label?
         const label = formElement.querySelector('.input-label-element');
         requestAnimationFrame(() => {
             formElement.toggleAttribute('data-empty-results', facetData.matches === 0);
@@ -79,16 +71,18 @@ export default class FacetsUpdater extends HTMLElement {
         });
     }
 
-    #getPath() {
-        if (!this.#endpointUrl) {
-            if (!this.dataset.endpointUrl) throw new Error('FacetsUpdater: Argument data-path is missing.');
-            this.#endpointUrl = this.dataset.endpointUrl;
+    #getEndpoint() {
+        // Read at runtime to catch updates if they happen after initialization or after the
+        // element was added to the DOM.
+        const { endpointUrl } = this.dataset;
+        if (endpointUrl === undefined) {
+            throw new Error(`Mandatory attribute data-endpoint-url is missing, value ${endpointUrl} is not permitted. Use data-endpoint-url="" for an empty URL.`);
         }
-        return this.#endpointUrl;
+        return endpointUrl;
     }
 
-    #assembleURL({ queryString }) {
-        const url = `${this.#getPath()}${queryString}`;
+    #assembleURL({ searchParams }) {
+        const url = `${this.#getEndpoint()}?${searchParams.toString()}`;
         return url;
     }
 
@@ -98,4 +92,3 @@ export default class FacetsUpdater extends HTMLElement {
         }
     }
 }
-

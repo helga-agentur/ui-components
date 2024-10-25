@@ -4,10 +4,11 @@ import test from 'ava';
 import RequestPool from './RequestPool.mjs';
 
 const createRequestObject = () => class {
+    // eslint-disable-next-line class-methods-use-this
     fetch() {}
+    // eslint-disable-next-line class-methods-use-this
     addHandler() {}
 };
-
 
 test('throws on wrong initialization', (t) => {
     t.throws(() => new RequestPool(), { message: /Missing mandatory argument requestObject/ });
@@ -16,12 +17,10 @@ test('throws on wrong initialization', (t) => {
     t.notThrows(() => new RequestPool(createRequestObject()));
 });
 
-
 test('throws when loadContent is called with invalid request configuration', (t) => {
     const pool = new RequestPool(createRequestObject());
-    t.throws(() => pool.loadContent({ queryString: 5 }), { message: /Property 'queryString'.*is 5 instead/ });
+    t.throws(() => pool.loadContent({ searchParams: 5 }), { message: /Property 'searchParams'.*is 5 instead/ });
 });
-
 
 test('throws when addHandler is called with an invalid handler', (t) => {
     const pool = new RequestPool(createRequestObject());
@@ -29,7 +28,6 @@ test('throws when addHandler is called with an invalid handler', (t) => {
     t.throws(() => pool.addHandler({ updateResponseStatus: 6 }), { message: /'updateResponseStatus' property.*is 6 instead/ });
     t.throws(() => pool.addHandler({ updateResponseStatus: () => {}, assembleURL: 5 }), { message: /'assembleURL' property.*is 5 instead/ });
 });
-
 
 test('calls all added handlers\' assembleURL method, fetches data, distributes it', async (t) => {
     // What URLs are fetched?
@@ -62,7 +60,7 @@ test('calls all added handlers\' assembleURL method, fetches data, distributes i
         }
 
         fetch() {
-            fetchRequestCount++;
+            fetchRequestCount += 1;
             this.handlers.forEach((handler) => handler(`response-${this.url}`));
         }
     }
@@ -87,12 +85,12 @@ test('calls all added handlers\' assembleURL method, fetches data, distributes i
 
     // Invoke all handlers (by loading content on RequestPool)
     const queryParams = new URLSearchParams('a=b&c=d');
-    pool.loadContent({ queryString: queryParams });
+    pool.loadContent({ searchParams: queryParams });
 
     // Check if assembleURL was called with the correct arguments; 4 handlers have an assembleURL
     // function
     t.is(assembleURLParams.length, 4);
-    assembleURLParams.forEach((param) => t.deepEqual(param, { queryString: queryParams }));
+    assembleURLParams.forEach((param) => t.deepEqual(param, { searchParams: queryParams }));
 
     // Check if URLs returned by all handler's assembleURL method are fetched; duplicates (in our
     // case 'url1' are excluded)
@@ -104,7 +102,7 @@ test('calls all added handlers\' assembleURL method, fetches data, distributes i
     // Check if all requests were made
     t.is(fetchRequestCount, 2);
 
-    await new Promise((resolve) => setTimeout(resolve));
+    await new Promise((resolve) => { setTimeout(resolve); });
 
     // Check if updateResponseStatus was called correctly
     t.is(responses.length, 3);
@@ -114,9 +112,7 @@ test('calls all added handlers\' assembleURL method, fetches data, distributes i
 
     // All signals are instances of AbortSignal
     t.is(signals.every((signal) => signal instanceof AbortSignal), true);
-
 });
-
 
 test('previous requests are aborted', (t) => {
     const signals = [];
@@ -131,8 +127,10 @@ test('previous requests are aborted', (t) => {
             this.url = url;
         }
 
+        // eslint-disable-next-line class-methods-use-this
         addHandler() {}
 
+        // eslint-disable-next-line class-methods-use-this
         fetch() {}
     }
 
@@ -143,11 +141,10 @@ test('previous requests are aborted', (t) => {
         updateResponseStatus: () => {},
     });
 
-    pool.loadContent({ queryString: new URLSearchParams('a=b') });
-    pool.loadContent({ queryString: new URLSearchParams('a=b') });
+    pool.loadContent({ searchParams: new URLSearchParams('a=b') });
+    pool.loadContent({ searchParams: new URLSearchParams('a=b') });
 
     t.is(signals.length, 2);
     t.is(signals[0].aborted, true);
     t.is(signals[1].aborted, false);
-
 });

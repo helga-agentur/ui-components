@@ -8,12 +8,11 @@
  *     - then calls updateResponseStatus on all handlers.
  *
  * Every handler *must* provide two *methods*:
- * - assembleURL: takes { queryString: URLSearchParams } as a parameter and returns a either
+ * - assembleURL: takes { searchParams: URLSearchParams } as a parameter and returns a either
  *   a URL to fetch (string) or null. If null is returned, nothing is being fetched.
  * - updateResponseStatus: called by Request (see signature there, is injected via constructor)
  */
 export default class RequestPool {
-
     /**
      * Contains all actors that handle fetched content.
      * type {{ updateResponseStatus: Function, assembleURL: Function }[]}
@@ -32,7 +31,6 @@ export default class RequestPool {
      * type {*}
      */
     #requestClass;
-
 
     /**
      * @param {{ fetch: function, addHandler: function, url: string }} requestObject - Injected
@@ -57,7 +55,7 @@ export default class RequestPool {
      * - Collects all URLs to fetch (from all handlers by calling their assembleURL function)
      * - Groups requests by their URL (to only call every URL once)
      * - Then executes the requests
-     * @param {{ queryString: URLSearchParams }} requestConfiguration - Configuration that will be
+     * @param {{ searchParams: URLSearchParams }} requestConfiguration - Configuration that will be
      * passed to the assembleURL function of all handlers. Only supports queryString parameter for
      * now.
      */
@@ -82,46 +80,47 @@ export default class RequestPool {
                 if (typeof url !== 'string') {
                     throw new Error(`Expected URL returned by assembleURL funtion to be a string, got ${url} instead.`);
                 }
+
                 const matchingRequest = previous.find((request) => request.url === url);
                 if (matchingRequest) {
                     matchingRequest.addHandler(loader.updateResponseStatus.bind(loader));
                     return previous;
-                } else {
-                    const request = new this.#requestClass({
-                        url,
-                        signal: this.#latestAbortController.signal,
-                    });
-                    // Test if newly created request instance has an URL property that returns
-                    // the expected value (this was a cause of a hard-to-debug error in unit tests)
-                    if (request.url !== url) {
-                        throw new Error(`The instantiated request object must provide a property 'url' to combine multiple requests to the same URL within one request; url is ${request.url} instead.`);
-                    }
-                    request.addHandler(loader.updateResponseStatus.bind(loader));
-                    return [...previous, request];
                 }
+
+                const request = new this.#requestClass({
+                    url,
+                    signal: this.#latestAbortController.signal,
+                });
+                // Test if newly created request instance has an URL property that returns
+                // the expected value (this was a cause of a hard-to-debug error in unit tests)
+                if (request.url !== url) {
+                    throw new Error(`The instantiated request object must provide a property 'url' to combine multiple requests to the same URL within one request; url is ${request.url} instead.`);
+                }
+                request.addHandler(loader.updateResponseStatus.bind(loader));
+                return [...previous, request];
             }, []);
         requests.forEach((request) => request.fetch());
     }
 
     /**
      * Checks if we get the requestConfiguration we expect
-     * @param {{ queryString: URLSearchParams }} requestConfiguration
+     * @param {{ searchParams: URLSearchParams }} requestConfiguration
      */
     static #validateRequestConfiguration(requestConfiguration) {
         const invalidKeys = Object.keys(requestConfiguration)
-            .filter((item) => item !== 'queryString');
+            .filter((item) => item !== 'searchParams');
         if (invalidKeys.length) {
             console.warn(
-                'Keys %s are not supported for requestConfiguration; only \'queryString\' is supported.',
+                'Keys %s are not supported for requestConfiguration; only \'searchParams\' is supported.',
                 invalidKeys.join(', '),
             );
         }
         if (
             // Only check type *if* argument is provided
-            Object.hasOwn(requestConfiguration, 'queryString')
-            && !(requestConfiguration.queryString instanceof URLSearchParams)
+            Object.hasOwn(requestConfiguration, 'searchParams')
+            && !(requestConfiguration.searchParams instanceof URLSearchParams)
         ) {
-            throw new Error(`Property 'queryString' passed as requestConfiguration must be an instance of URLSearchParams, is ${requestConfiguration.queryString} instead.`);
+            throw new Error(`Property 'searchParams' passed as requestConfiguration must be an instance of URLSearchParams, is ${requestConfiguration.searchParams} instead.`);
         }
     }
 

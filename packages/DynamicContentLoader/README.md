@@ -1,69 +1,154 @@
-# Dynamic Page Loader
+# Dynamic Content Loader
 
-Components that are able to load and handle asynchronously loaded content in an orchestrated way. 
-- support loading indicator
-- supports error handling
+A set of components that are wrapped in a `dynamic-content-orchestrator` and play together in a
+loosely coupled way.
+
+Basically, there are two types of components:
+- `Listeners` that that handle DOM events and let all `Updaters` know that there's new content
+to fetch and display (through the orchestrator). They dispatch a `loadDynamicContent` event with 
+`{ requestConfiguration: { searchParams } }` that can be consumed by `Updaters`.
+- `Updaters` that wait for `Listeners` `loadDynamicContent` event, fetch content and update the 
+DOM. In order to get noticed by the orchestrator, they need to register themselves by dispatching
+an `addDynamicContentHandler` event.
+
+The orchestrator sits between all those components and mainly:
+- listens for `addDynamicContentHandler` events through which `Updaters` and `Listeners` register
+themselves.
+- listens for `loadDynamicContent` events fired by `Listeners`, then asks all `Updaters` for their
+URLs (by calling their `assembleURL` function).
+- combines all requests to the same URL, fetches them and cancels previous requests to prevent
+race conditions.
+- distributes the fetched content to the matching `Updaters`.
+
+An element can at the same time be a `Listener` and an `Updater`.
+
+Some of those components are provided within this package, others can be developed and integrated
+for specific use cases.
+
 
 ## Example
 
 ```html
-<async-loader
-    data-endpoint-url="/testContent.html"
-    data-trigger-event-names="loadData1,loadData2"
-    data-trigger-event-filter="(event.type === 'loadData1' && event.detail.loadAsync === true) || event.type === 'loadData2'"
->
-    <div data-content-container>Initial Content</div>
-    <template data-loading-template>Loading ...</template>
-    <template data-error-template>Error: {{message}}</template>
-</async-loader>
+<dynamic-content-orchestrator>
+    <content-updater data-endpoint-url="/results" data-is-main-content>
+        <div data-loading hidden>Loading…</div>
+        <div data-error hidden><!-- Will be populated when needed --></div>
+        <div data-content>Initial content</div>
+    </content-updater>
 
-<button class="regularContentButton">Load</button>
-
-<script>
-    document.querySelector('.regularContentButton').addEventListener('click', () => {
-        const options = { bubbles: true, detail: { loadAsync: true } };
-        window.dispatchEvent(new CustomEvent('loadData', options));
-    });
-</script>
+    <a href="/page?q=5">
+        <link-listener>
+            <!-- This content-updater fetches the new pagination when the page changes-->
+            <content-updater data-endpoint-url="/page">
+                <div data-loading hidden>Loading…</div>
+                <div data-error hidden><!-- Will be populated when needed --></div>
+                <div data-content>Page 3</div>
+            </content-updater>
+        <link-listener>
+    </a>
 ```
 
 ## Components
 
-### Async Loader
+### Dynamic Content Orchestrator
 
-#### Exposed Element
-`<async-loader></async-loader>`
+#### Exposed Element `<dynamic-content-orchestrator></dynamic-content-orchestrator>`
+
+### Structure
+Serves as a wrapper around all other components below and ensures that they play togehter nicely. 
+
+Handles two events:
+- `addDynamicContentHandler` with `{ detail: { updateResponseStatus, assembleURL } }`:
+  - `updateResponseStatus` (`function`) will be called when the orchestrator receives new content.
+    The argument will be an object with `status` and `content` properties; valid status are
+    `loading`, `loaded` and `failed`. `content` will be the content that will be displayed (empty
+    if the status is `loading`).
+  - `assembleURL` (`function`) will be called when the orchestrator receives a
+    `loadDynamicContent` event. It will be called with `{ searchParams }` (`URLSearchParams`) and
+    must return a String (or null if nothing shold be fetched).
+- `loadDynamicContent`: Dispatched by `Listeners` when they want to fetch new content with
+  `{ detail: { requestConfiguration: { searchParams } }}`.
 
 #### Attributes
-- `data-endpoint-url` (required if `data-event-endpoint-property-name` is not set): URL that should be fetched.
-If both `data-endpoint-url` and `data-event-endpoint-property-name` are provided, `data-endpoint-url` will be preferred.
-- ~~`data-trigger-event-name`~~ (deprecated): Name of the event that causes content to be loaded; it will
-be listened to on `window`.
-- `data-trigger-event-names` (required): Comma separated names of the events which will trigger the fetching of the content; they will
-  be listened to on `window`.
-- `data-event-endpoint-property-name` (required if `data-endpoint-url` is not set): Name of the property 
-in the `event` payload (`detail` property of the event object) which contains the endpoint URL.
-Has no effect if `data-endpoint-url` is set.
-- `data-trigger-event-filter` (optional): JavaScript expression that will be evaluated against
-the event if provided. Only if the event matches the expression, data will be loaded; if not, the
-event will be ignored. Only one variable is passed (the `Event` thats name matches
-`data-trigger-event-name`); it can be accessed through `event`.
-- `data-load-once` (optional): if this boolean attribute is set, content will load only once,
-no matter how many times a valid event fires.
+None
+
+
+
+
+### Content Updater
+
+#### Exposed Element
+`<content-udpater></content-updater>`
+
+#### Attributes
+- `data-endpoint-url` (required, but may be empty): URL that should be fetched; a query string
+may be automatically attached if it is requested by a listener (e.g. to paginate or filter the
+view).
+- `data-is-main-content` (optional): If set, the browser will scroll to the top of the
+element when the content changes.
 
 #### Content
-The following elements may or must be provided within `<aync-loader>`:
-- Any element matching `[data-content-container]` (required): Content (loading, error or 
-successfully fetched content) will be placed within this element after it has been emptied.
-- A `template` element that matches `[data-loading-template]` (optional): Its content will be
-displayed within `[data-content-container]` while data is loading.
-- A `template` element that matches `[data-error-template]` (required): Its content will be
-displayed within `[data-content-container]` if loading data fails; you may use a string
-`{{message}}` within the template's `textContent` to display the error message.
+The following elements **must** be provided within `<aync-loader>`:
+- An element matching `[data-content]` (required): If the request succeeds, it will be added to 
+this element and the element will be shown.
+- An element matching `[data-loading]` (required): It will be displayed while the data is loading.
+- An element matching `[data-error]` (required): It will be displayed if loading data fails;
+the error message will be added to this element.
 
 ### Events
-- Dispatches `asyncLoaderFail` event if loading content fails (bubbles).
-- Dispatches `asyncLoaderSuccess` event if loading content succeeds (bubbles).
-- Both events carry a `detail` object with properties `url` (`String`, deprecated), `response`
-(instance of [Response](https://developer.mozilla.org/en-US/docs/Web/API/Response)) and `element`
-(`HTMLElement` that matches the dispatching `AsyncLoader`).
+- `addDynamicContentHandler` (see [DynamicContentOrchestrator](#DynamicContentOrchestrator))
+
+
+
+## Link Listener
+
+#### Exposed Element `<link-listener></link-listener>`
+
+#### Attributes
+None
+
+### Structure
+Wrap the `link-listener` around any number of links to update the content dynamically when they're
+clicked. It listens to clicks on any child element and takes the `href` from the first surrounding
+element that has a `href` attribute. The `href`'s query string will be used to dispatch a
+`loadDynamicContent` event.
+
+#### Events
+- `loadDynamicContent` (see [DynamicContentOrchestrator](#DynamicContentOrchestrator)) with
+the clicked link's (or its ancestral element's) `href` as `searchParams`.
+
+
+## Filter Change Listener
+
+#### Exposed Element `<filter-change-listener></filter-change-listener>`
+
+#### Attributes
+None
+
+### Structure
+Wrap the `filter-change-listener` around a form to update the content dynamically when 
+the form is changed.
+
+
+## Query String Updater
+
+#### Exposed Element `<query-string-updater></query-string-updater>`
+
+#### Attributes
+None
+
+### Structure
+Updates the window location (query string) to represent the currently selected filters. Place it
+anywhere in the DOM.
+
+
+## Facets Updater
+
+#### Exposed Element `<facets-updater></facets-updater>`
+
+#### Attributes
+- `data-endpoint` (required, but may be empty): URL that should be fetched; a query string
+may be attached if it is requested by a listener.
+
+### Structure
+Wrap around the facets provided by Drupal; component is quite Drupal-specific.

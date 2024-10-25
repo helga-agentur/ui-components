@@ -34,7 +34,7 @@ export default class DynamicContentOrchestrator extends HTMLElement {
     }
 
     /**
-     * @param {{ detail: { requestConfiguration: { queryString: QueryString } }}} param
+     * @param {{ detail: { requestConfiguration: { searchParams: URLSearchParams } }}} param
      */
     #loadContent({ detail: { requestConfiguration } } = {}) {
         // Argument checking is done in RequestPool
