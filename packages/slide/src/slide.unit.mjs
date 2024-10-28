@@ -48,10 +48,10 @@ test('adjusts dimensions', async (t) => {
         {
             configurable: true,
             get() {
-                return this._scrollHeight || 0;
+                return this.internalScrollHeight || 0;
             },
             set(val) {
-                this._scrollHeight = val;
+                this.internalScrollHeight = val;
             },
         },
     );
@@ -61,10 +61,10 @@ test('adjusts dimensions', async (t) => {
         {
             configurable: true,
             get() {
-                return this._scrollWidth || 0;
+                return this.internalScrollWidth || 0;
             },
             set(val) {
-                this._scrollWidth = val;
+                this.internalScrollWidth = val;
             },
         },
     );
@@ -80,7 +80,7 @@ test('adjusts dimensions', async (t) => {
     `;
     document.body.appendChild(script);
 
-    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    await new Promise((resolve) => { window.requestAnimationFrame(resolve); });
 
     t.is(heightDiv.style.height, '50px');
     t.is(widthDiv.style.width, '40px');
@@ -93,7 +93,7 @@ test('adjusts dimensions', async (t) => {
     const widthTransitionEndEvent = new window.CustomEvent('transitionend');
     widthTransitionEndEvent.propertyName = 'width';
     widthDiv.dispatchEvent(widthTransitionEndEvent);
-    await new Promise((resolve) => setTimeout(resolve));
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(heightDiv.style.height, 'auto');
     t.is(widthDiv.style.width, 'auto');
 
@@ -101,7 +101,6 @@ test('adjusts dimensions', async (t) => {
     // scrollHeight correctly)
     heightDiv.scrollHeight = 20;
     widthDiv.scrollWidth = 30;
-    // Object.defineProperty(window.HTMLElement.prototype, 'scrollHeight', { value: 30 });
 
     const reduceScript = document.createElement('script');
     reduceScript.textContent = `
@@ -115,7 +114,7 @@ test('adjusts dimensions', async (t) => {
 
     widthDiv.dispatchEvent(widthTransitionEndEvent);
     heightDiv.dispatchEvent(heightTransitionEndEvent);
-    await new Promise((resolve) => setTimeout(resolve));
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(widthDiv.style.width, 'auto');
     t.is(heightDiv.style.height, 'auto');
 
@@ -132,7 +131,7 @@ test('adjusts dimensions', async (t) => {
 
     // Make sure height is not set to 'auto' when the function was called with a targetSize
     heightDiv.dispatchEvent(heightTransitionEndEvent);
-    await new Promise((resolve) => setTimeout(resolve));
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(heightDiv.style.height, '0px');
 
     t.is(errors.length, 0);
@@ -156,7 +155,7 @@ test('calls onEnd', async (t) => {
     document.body.appendChild(script);
     t.is(window.slideOnEndCalled, undefined);
 
-    await new Promise((resolve) => setTimeout(resolve));
+    await new Promise((resolve) => { setTimeout(resolve); });
 
     const heightTransitionEndEvent = new window.CustomEvent('transitionend');
     heightTransitionEndEvent.propertyName = 'height';
