@@ -11,6 +11,9 @@ export default class FilterChangeListener extends HTMLElement {
 
     #addChangeListener() {
         this.addEventListener('change', this.#handleChange.bind(this));
+        // TODO: Get from attribute
+        // Make sure we dont't fire on change *and* on input
+        // this.addEventListener('input', this.#handleChange.bind(this));
     }
 
     #handleChange() {
@@ -25,7 +28,6 @@ export default class FilterChangeListener extends HTMLElement {
         [...formData.entries()].forEach(([key, value]) => {
             if (value) cleanFormData.append(key, value);
         });
-        console.log('clean', cleanFormData);
         this.dispatchEvent(new CustomEvent('loadDynamicContent', {
             bubbles: true,
             detail: {
