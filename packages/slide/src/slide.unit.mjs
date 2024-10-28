@@ -118,25 +118,24 @@ test('adjusts dimensions', async (t) => {
     t.is(widthDiv.style.width, 'auto');
     t.is(heightDiv.style.height, 'auto');
 
-    // Test sliding without a targetSize
+    // Test sliding with a targetSize
     const closeScript = document.createElement('script');
     closeScript.textContent = `
-        slide({ element: document.querySelector('.widthDiv'), dimension: 'x', targetSize: 0 });
-        slide({ element: document.querySelector('.heightDiv'), targetSize: 0 });
+        slide({ element: document.querySelector('.widthDiv'), dimension: 'x', targetSize: 10 });
+        slide({ element: document.querySelector('.heightDiv'), targetSize: 10 });
     `;
     document.body.appendChild(closeScript);
 
-    t.is(widthDiv.style.width, '0px');
-    t.is(heightDiv.style.height, '0px');
+    t.is(widthDiv.style.width, '10px');
+    t.is(heightDiv.style.height, '10px');
 
     // Make sure height is not set to 'auto' when the function was called with a targetSize
     heightDiv.dispatchEvent(heightTransitionEndEvent);
     await new Promise((resolve) => { setTimeout(resolve); });
-    t.is(heightDiv.style.height, '0px');
+    t.is(heightDiv.style.height, '10px');
 
     t.is(errors.length, 0);
 });
-
 
 test('calls onEnd', async (t) => {
     const { document, errors, window } = await setup(true);
