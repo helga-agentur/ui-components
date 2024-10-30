@@ -39,14 +39,18 @@ and import it before the elements via `import 'regenerator-runtime/runtime.js';`
 - [Audio Player](./packages/Media/README.md)
 - [Table of Contents](./packages/TableOfContents/README.md)
 - [Slider](./packages/Slider/README.md)
-- [FormSync](./packages/FormSync/README.md)
-- [VimeoPlayer](./packages/VimeoPlayer/README.md)
-- [VimeoPreviewImage](./packages/VimeoPreviewImage/README.md)
+- [Form Sync](./packages/FormSync/README.md)
+- [Vimeo Player](./packages/VimeoPlayer/README.md)
+- [Vimeo Preview Image](./packages/VimeoPreviewImage/README.md)
+- [Dynamic Content Loader](./packages/DynamicContentLoader/README.md)
+- [Async Loader](./packages/AsyncLoader/README.md)
+- [Dynamic Page Loader](./packages/DynamicPageLoader/README.md)
+- [Relative Time](./packages/RelativeTime/README.md)
 
 
 ## Tools
 - [readAttribute](./packages/tools/README.md)
-- [Split Text](./packages/splitText/README.md)
+- [splitText](./packages/splitText/README.md)
 - [once](./packages/tools/README.md)
 - [slide](./packages/slide/README.md), import as `import { slide } from '@joinbox/ui-components'`
 - [createDebounce](./packages/tools/README.md)
