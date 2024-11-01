@@ -1,5 +1,10 @@
 # Dynamic Page Loader
 
+An abstract / multi-purpose component that loads parts of a page dynamically. Intends to solve:
+- paginations
+- infinite scroll (TBD, needs `append` mode)
+- facets
+
 Loads content of a web page dynamically when the user navigates to a different URL. It thereby
 enables seamless page transitions between two different static web pages, similar to the ones
 provided by Next.js or Gatsby.
