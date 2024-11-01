@@ -51,9 +51,8 @@ export default class ContentUpdater extends HTMLElement {
         Object.keys(elements).forEach((key) => {
             if (!elements[key]) {
                 throw (new Error(`Make sure that the ContentUpdater has three children with the following data attributes: data-loading, data-error and data-content; missing element to display status "${status}".`));
-            } else {
-                elements[key].hidden = (key !== status);
             }
+            elements[key].hidden = (key !== status);
         });
         const activeElement = elements[status];
         if (['failed', 'loaded'].includes(status)) activeElement.innerHTML = content;

@@ -2,7 +2,7 @@
 
 /**
  * Updates the facet (expected amount of results) on checkboxes provided by Drupal.
- * Needs DynamicContentLoader to work.
+ * Needs DynamicContentOrchestrator to work in conjunction with other elements.
  */
 export default class FacetsUpdater extends HTMLElement {
     connectedCallback() {
@@ -28,7 +28,7 @@ export default class FacetsUpdater extends HTMLElement {
 
     #updateResponseStatus(statusUpdate) {
         if (statusUpdate.status !== 'loaded') return;
-        const json = JSON.parse(statusUpdate.content);
+        const facetData = JSON.parse(statusUpdate.content);
         /* Answer comes in the form of:
          * {
          *   "field_job_location": [
@@ -42,7 +42,7 @@ export default class FacetsUpdater extends HTMLElement {
          *   ],
          * }
          */
-        Object.entries(json).forEach(([facetName, facets]) => {
+        Object.entries(facetData).forEach(([facetName, facets]) => {
             facets.forEach((facetData) => this.#updateFacet(facetName, facetData));
         });
     }
