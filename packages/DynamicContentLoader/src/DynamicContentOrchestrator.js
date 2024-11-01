@@ -25,11 +25,11 @@ export default class DynamicContentOrchestrator extends HTMLElement {
     }
 
     connectedCallback() {
-        this.#setupLoadDynamicContentHandler();
-        this.#setupAddDynamicContentHandlerHandler();
+        this.#setupLoadDynamicContentListener();
+        this.#setupAddDynamicContentHandlerListener();
     }
 
-    #setupLoadDynamicContentHandler() {
+    #setupLoadDynamicContentListener() {
         this.addEventListener('loadDynamicContent', this.#loadContent.bind(this));
     }
 
@@ -41,7 +41,7 @@ export default class DynamicContentOrchestrator extends HTMLElement {
         this.#requestPool.loadContent(requestConfiguration);
     }
 
-    #setupAddDynamicContentHandlerHandler() {
+    #setupAddDynamicContentHandlerListener() {
         this.addEventListener('addDynamicContentHandler', this.#addHandler.bind(this));
     }
 
