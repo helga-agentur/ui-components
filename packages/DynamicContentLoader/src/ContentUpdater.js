@@ -27,14 +27,14 @@ export default class ContentUpdater extends HTMLElement {
         }));
     }
 
-    #updateResponseStatus(statusUpdate) {
-        if (!['loading', 'loaded', 'failed'].includes(statusUpdate.status)) {
-            throw new Error(`Expected statusUpdate.status to be one of 'loading', 'loaded' or 'failed', got ${statusUpdate.status} instead.`);
+    #updateResponseStatus({ status, content, response }) {
+        if (!['loading', 'loaded', 'failed'].includes(status)) {
+            throw new Error(`Expected statusUpdate.status to be one of 'loading', 'loaded' or 'failed', got ${status} instead.`);
         }
-        let content;
-        if (statusUpdate.status === 'loaded') content = statusUpdate.content;
-        else if (statusUpdate.status === 'failed') content = `ERROR: Status ${statusUpdate.response.status} – ${statusUpdate.content}`;
-        this.#updateDOM(statusUpdate.status, content);
+        let finalContent;
+        if (status === 'loaded') finalContent = content;
+        else if (status === 'failed') finalContent = `ERROR: Status ${response.status} – ${content}`;
+        this.#updateDOM(status, finalContent);
     }
 
     /**
@@ -59,7 +59,12 @@ export default class ContentUpdater extends HTMLElement {
         if (['failed', 'loaded'].includes(status)) activeElement.innerHTML = content;
         // Make sure the active element is visible but only if it's the main content (we don't want
         // to scroll to the pagination *and* the main content at the same time)
-        if (this.dataset.isMainContent) {
+        if (this.hasAttribute('data-is-main-content')) {
+            // Use `scrollTop` instead of `scrollIntoView` because `scrollIntoView` only makes sure
+            // that the element is visible, but not that it's at the top of the viewport. If the
+            // pagination is below the the main content and a user changes the page, 
+            // `scrollIntoView` might not scroll at all if the main content is visible; in that
+            // case, we want to scroll the the main content's top, though.
             const scrollTop = window.scrollY + activeElement.getBoundingClientRect().top;
             window.scrollTo({ top: scrollTop, behavior: 'smooth' });
         }
@@ -76,8 +81,7 @@ export default class ContentUpdater extends HTMLElement {
     }
 
     #assembleURL({ searchParams }) {
-        const url = `${this.#getEndpointURL()}?${searchParams.toString()}`;
-        return url;
+        return `${this.#getEndpointURL()}?${searchParams.toString()}`;
     }
 
     static defineCustomElement() {
