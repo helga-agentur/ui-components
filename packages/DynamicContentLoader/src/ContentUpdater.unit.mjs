@@ -8,7 +8,7 @@ const setup = async (hideErrors) => {
     return getDOM({ basePath, scripts: ['ContentUpdaterElement.js'], hideErrors });
 };
 
-test('emits addDynamicContentHandler', async (t) => {
+test('emits addDynamicContentHandler with correct arguments', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
     window.addEventListener('addDynamicContentHandler', (ev) => {
@@ -18,6 +18,7 @@ test('emits addDynamicContentHandler', async (t) => {
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
     t.is(addEventsFired.length, 1);
+    // We expect { detail: { assembleURL: function, updateResponseStatus: function } }
     t.is(typeof addEventsFired[0].detail.updateResponseStatus, 'function');
     t.is(typeof addEventsFired[0].detail.assembleURL, 'function');
     t.is(errors.length, 0);
