@@ -41,26 +41,24 @@ const createElement = (document, html) => {
     return container.firstChild;
 };
 
-test('coordinates loaders and handlers', async (t) => {
+test('coordinates listeners and updaters', async (t) => {
     const { document, window, errors } = await setup(true);
     window.fetch = polyfillFetch(200, 'sAllGood');
 
-    const child = createElement(document, '<div></div>');
-    const orchestrator = createElement(document,
-        `<dynamic-content-orchestrator>
-        </dynamic-content-orchestrator>`);
+    const child = document.createElement('div');
+    const orchestrator = document.createElement('dynamic-content-orchestrator');
     document.body.appendChild(orchestrator);
     orchestrator.appendChild(child);
 
     // Collect all responses (to run tests against them)
     const responses = [];
-    // Create and register a handler
-    const handler = {
+    // Create and register an updater
+    const updater = {
         assembleURL: () => 'test1',
         updateResponseStatus: (response) => responses.push(response),
     };
     child.dispatchEvent(
-        new window.CustomEvent('addDynamicContentHandler', { detail: handler, bubbles: true }),
+        new window.CustomEvent('addDynamicContentHandler', { detail: updater, bubbles: true }),
     );
 
     // Load content
