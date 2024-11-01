@@ -13,7 +13,7 @@ const setup = async (hideErrors) => {
     });
 };
 
-test('emits loadDynamicContent', async (t) => {
+test('emits loadDynamicContent and uses closest href\'s query string as event detail', async (t) => {
     const { document, errors, window } = await setup(true);
     const link = document.createElement('a');
     document.body.appendChild(link);

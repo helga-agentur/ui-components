@@ -2,7 +2,7 @@
 
 /**
  * Custom element that dispatches a loadDynamicContent event when a filter changes (checkboxes,
- * inputs etc.). Needs DynamicContentOrchestrator to work.
+ * inputs etc.). Needs DynamicContentOrchestrator to work in conjunction with other elements.
  */
 export default class FilterChangeListener extends HTMLElement {
     connectedCallback() {

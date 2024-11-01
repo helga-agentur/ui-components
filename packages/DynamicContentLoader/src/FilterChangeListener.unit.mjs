@@ -8,7 +8,7 @@ const setup = async (hideErrors) => {
     return getDOM({ basePath, scripts: ['FilterChangeListenerElement.js'], hideErrors });
 };
 
-test('emits loadDynamicContent', async (t) => {
+test('emits loadDynamicContent and adds correct event details', async (t) => {
     const { document, errors, window } = await setup(true);
     const filterChangeListener = document.createElement('filter-change-listener');
     document.body.appendChild(filterChangeListener);
