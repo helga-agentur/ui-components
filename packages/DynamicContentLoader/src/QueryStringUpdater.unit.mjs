@@ -11,7 +11,7 @@ const setup = async (hideErrors) => {
 test('emits loadDynamicContent', async (t) => {
     const { document, errors, window } = await setup(true);
     const events = [];
-    window.addEventListener('addDynamicContentHandler', (ev) => { events.push(ev); });
+    window.addEventListener('addDynamicContentUpdater', (ev) => { events.push(ev); });
     const queryStringUpdater = document.createElement('query-string-updater');
     document.body.appendChild(queryStringUpdater);
     await new Promise((resolve) => { setTimeout(resolve); });

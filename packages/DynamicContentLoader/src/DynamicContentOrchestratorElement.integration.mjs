@@ -35,12 +35,6 @@ const polyfillFetch = (status, response, failOnParse = false, expectedURL = fals
     }
 );
 
-const createElement = (document, html) => {
-    const container = document.createElement('div');
-    container.innerHTML = html;
-    return container.firstChild;
-};
-
 test('coordinates listeners and updaters', async (t) => {
     const { document, window, errors } = await setup(true);
     window.fetch = polyfillFetch(200, 'sAllGood');
@@ -58,7 +52,7 @@ test('coordinates listeners and updaters', async (t) => {
         updateResponseStatus: (response) => responses.push(response),
     };
     child.dispatchEvent(
-        new window.CustomEvent('addDynamicContentHandler', { detail: updater, bubbles: true }),
+        new window.CustomEvent('addDynamicContentUpdater', { detail: updater, bubbles: true }),
     );
 
     // Load content

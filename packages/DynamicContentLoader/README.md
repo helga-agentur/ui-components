@@ -12,7 +12,7 @@ once it arrives.
 
 Basic Flow:
 1. All `Updater`s register themselves at the `DynamicContentOrchestrator` by dispatching an
-`addDynamicContentHandler` event with `{ updateResponseStatus, assembleURL }`.
+`addDynamicContentUpdater` event with `{ updateResponseStatus, assembleURL }`.
 2. Once a user interaction happens, a `Listener` dispatches a `loadDynamicContent` event with 
 `{ requestConfiguration: { searchParams } }`. The `searchParams` correspond to the filters that
 should be applied to the fetched content.
@@ -69,7 +69,7 @@ for specific use cases.
 Serves as a wrapper around all other components below and ensures that they play togehter nicely. 
 
 Handles two events:
-- `addDynamicContentHandler ({ detail: { assembleURL: function, updateResponseStatus: 
+- `addDynamicContentUpdater ({ detail: { assembleURL: function, updateResponseStatus: 
 function } })`. The argument signatures are:
   - `assembleURL (function({ searchParams: SearchParams }))` will be called when new content 
     should be fetched. Must return a string or `null` if nothing should be fetched.
@@ -107,7 +107,7 @@ this element and the element will be displayed.
 the error message will be added to this element.
 
 #### Events
-- `addDynamicContentHandler` (see [DynamicContentOrchestrator](#DynamicContentOrchestrator))
+- `addDynamicContentUpdater` (see [DynamicContentOrchestrator](#DynamicContentOrchestrator))
 
 
 

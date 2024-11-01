@@ -17,7 +17,7 @@ export default class FacetsUpdater extends HTMLElement {
         // Make sure the event is only fired after surrounding DynamicContentLoader is ready,
         // even the script that defines it is loaded after this one.
         await new Promise((resolve) => { setTimeout(resolve); });
-        this.dispatchEvent(new CustomEvent('addDynamicContentHandler', {
+        this.dispatchEvent(new CustomEvent('addDynamicContentUpdater', {
             bubbles: true,
             detail: {
                 updateResponseStatus: this.#updateResponseStatus.bind(this),

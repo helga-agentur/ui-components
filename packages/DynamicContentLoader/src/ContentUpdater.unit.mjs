@@ -8,10 +8,10 @@ const setup = async (hideErrors) => {
     return getDOM({ basePath, scripts: ['ContentUpdaterElement.js'], hideErrors });
 };
 
-test('emits addDynamicContentHandler with correct arguments', async (t) => {
+test('emits addDynamicContentUpdater with correct arguments', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
-    window.addEventListener('addDynamicContentHandler', (ev) => {
+    window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
     const updater = document.createElement('content-updater');
@@ -27,8 +27,8 @@ test('emits addDynamicContentHandler with correct arguments', async (t) => {
 test('assembles correct URL', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
-    // We can only access assembleURL by listening to addDynamicContentHandler
-    window.addEventListener('addDynamicContentHandler', (ev) => {
+    // We can only access assembleURL by listening to addDynamicContentUpdater
+    window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
     const updater = document.createElement('content-updater');
@@ -52,8 +52,8 @@ test('assembles correct URL', async (t) => {
 test('updates content', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
-    // We can only access assembleURL by listening to addDynamicContentHandler
-    window.addEventListener('addDynamicContentHandler', (ev) => {
+    // We can only access assembleURL by listening to addDynamicContentUpdater
+    window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
     const updater = document.createElement('content-updater');
