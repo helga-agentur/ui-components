@@ -7,13 +7,13 @@ const createRequestObject = () => class {
     // eslint-disable-next-line class-methods-use-this
     fetch() {}
     // eslint-disable-next-line class-methods-use-this
-    addHandler() {}
+    addUpdater() {}
 };
 
 test('throws on wrong initialization', (t) => {
     t.throws(() => new RequestPool(), { message: /Missing mandatory argument requestObject/ });
     t.throws(() => new RequestPool(class {}), { message: /mandatory method 'fetch'/ });
-    t.throws(() => new RequestPool(class { fetch() {} }), { message: /mandatory method 'addHandler'/ });
+    t.throws(() => new RequestPool(class { fetch() {} }), { message: /mandatory method 'addUpdater'/ });
     t.notThrows(() => new RequestPool(createRequestObject()));
 });
 
@@ -22,11 +22,11 @@ test('throws when loadContent is called with invalid request configuration', (t)
     t.throws(() => pool.loadContent({ searchParams: 5 }), { message: /Property 'searchParams'.*is 5 instead/ });
 });
 
-test('throws when addHandler is called with an invalid handler', (t) => {
+test('throws when addUpdater is called with an invalid handler', (t) => {
     const pool = new RequestPool(createRequestObject());
-    t.throws(() => pool.addHandler({}), { message: /'updateResponseStatus' property.*is undefined instead/ });
-    t.throws(() => pool.addHandler({ updateResponseStatus: 6 }), { message: /'updateResponseStatus' property.*is 6 instead/ });
-    t.throws(() => pool.addHandler({ updateResponseStatus: () => {}, assembleURL: 5 }), { message: /'assembleURL' property.*is 5 instead/ });
+    t.throws(() => pool.addUpdater({}), { message: /'updateResponseStatus' property.*is undefined instead/ });
+    t.throws(() => pool.addUpdater({ updateResponseStatus: 6 }), { message: /'updateResponseStatus' property.*is 6 instead/ });
+    t.throws(() => pool.addUpdater({ updateResponseStatus: () => {}, assembleURL: 5 }), { message: /'assembleURL' property.*is 5 instead/ });
 });
 
 test('calls all added handlers\' assembleURL method, fetches data, distributes it', async (t) => {
@@ -55,7 +55,7 @@ test('calls all added handlers\' assembleURL method, fetches data, distributes i
             this.url = url;
         }
 
-        addHandler(handler) {
+        addUpdater(handler) {
             this.handlers.push(handler);
         }
 
@@ -78,10 +78,10 @@ test('calls all added handlers\' assembleURL method, fetches data, distributes i
     });
 
     // AssembleURL returns null
-    pool.addHandler(createHandler('url1'));
-    pool.addHandler(createHandler(null));
-    pool.addHandler(createHandler('url2'));
-    pool.addHandler(createHandler('url1'));
+    pool.addUpdater(createHandler('url1'));
+    pool.addUpdater(createHandler(null));
+    pool.addUpdater(createHandler('url2'));
+    pool.addUpdater(createHandler('url1'));
 
     // Invoke all handlers (by loading content on RequestPool)
     const queryParams = new URLSearchParams('a=b&c=d');
@@ -128,7 +128,7 @@ test('previous requests are aborted', (t) => {
         }
 
         // eslint-disable-next-line class-methods-use-this
-        addHandler() {}
+        addUpdater() {}
 
         // eslint-disable-next-line class-methods-use-this
         fetch() {}
@@ -136,7 +136,7 @@ test('previous requests are aborted', (t) => {
 
     const pool = new RequestPool(Request);
 
-    pool.addHandler({
+    pool.addUpdater({
         assembleURL: () => 'url1',
         updateResponseStatus: () => {},
     });

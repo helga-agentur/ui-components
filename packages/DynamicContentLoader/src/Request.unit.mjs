@@ -22,7 +22,7 @@ test('throws on invalid arguments', (t) => {
 
 test('throws on invalid handler', (t) => {
     const request = new Request({ url: '/test', signal: new AbortController().signal });
-    t.throws(() => request.addHandler(5), { message: /Parameter handler.*is 5 instead/ });
+    t.throws(() => request.addUpdater(5), { message: /Parameter handler.*is 5 instead/ });
 });
 
 test('calls url', async (t) => {
@@ -43,9 +43,9 @@ test('handles fails', async (t) => {
     const { fetch } = createFetchMock({ isOk: false, response: ':-(' });
     global.fetch = fetch;
     const request = new Request({ url: '/test', signal: new AbortController().signal });
-    request.addHandler(handler);
+    request.addUpdater(handler);
     // Add handler twice to check if all are called
-    request.addHandler(handler);
+    request.addUpdater(handler);
     await request.fetch();
     t.is(handlerArguments.length, 4);
     // Loading
@@ -66,9 +66,9 @@ test('handles success', async (t) => {
     const { fetch } = createFetchMock({ response: ':-D' });
     global.fetch = fetch;
     const request = new Request({ url: '/test', signal: new AbortController().signal });
-    request.addHandler(handler);
+    request.addUpdater(handler);
     // Add handler twice to check if all are called
-    request.addHandler(handler);
+    request.addUpdater(handler);
     await request.fetch();
     t.is(handlerArguments.length, 4);
     // Loading

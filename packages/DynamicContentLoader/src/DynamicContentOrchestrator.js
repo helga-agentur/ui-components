@@ -7,7 +7,7 @@ import RequestPool from './RequestPool.mjs';
  * Connects everything when it comes to Facets / dynamic UI filters:
  * - Listens for 'addDynamicContentUpdater' event and registers those
  * - Listens for 'loadDynamicContent' event; once it happens, uses RequestPool to get the fetch
- *   URL from all handlers, fetches the content and distributes it to all handlers
+ *   URL from all updaters, fetches the content and distributes it to all updaters 
  *
  * Is basically a custom element around RequestPool.
  */
@@ -42,11 +42,11 @@ export default class DynamicContentOrchestrator extends HTMLElement {
     }
 
     #setupaddDynamicContentUpdaterListener() {
-        this.addEventListener('addDynamicContentUpdater', this.#addHandler.bind(this));
+        this.addEventListener('addDynamicContentUpdater', this.#addUpdater.bind(this));
     }
 
-    #addHandler({ detail: handler }) {
-        this.#requestPool.addHandler(handler);
+    #addUpdater({ detail: updater }) {
+        this.#requestPool.addUpdater(updater);
     }
 
     static defineCustomElement() {

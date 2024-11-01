@@ -5,14 +5,14 @@
  */
 export default class QueryStringUpdater extends HTMLElement {
     connectedCallback() {
-        this.#emitAddHandlerEvent();
+        this.#emitAddUpdaterEvent();
     }
 
     /**
      * Element registers itself at the surrounding DynamicContentLoader that orchestrates API
      * calls.
      */
-    async #emitAddHandlerEvent() {
+    async #emitAddUpdaterEvent() {
         // Make sure the event is only fired *after* surrounding DynamicContentLoader is ready,
         // even the script that defines it is loaded after this one.
         await new Promise((resolve) => { setTimeout(resolve); });

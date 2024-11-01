@@ -40,7 +40,7 @@ export default class {
      * Adds a handler that will be called with updates for the request.
      * @param {function} handler
      */
-    addHandler(handler) {
+    addUpdater(handler) {
         if (typeof handler !== 'function') {
             throw new Error(`Parameter handler must be a function, is ${handler} instead.`);
         }
