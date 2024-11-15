@@ -13,6 +13,10 @@ export default class LinkListener extends HTMLElement {
         this.addEventListener('click', this.#handleClick.bind(this));
     }
 
+    #isResetButton() {
+        return this.hasAttribute('data-reset');
+    }
+
     #handleClick(event) {
         // If this element is nested within an a, the click target will be the element, not the a;
         // get the closest parent that contains a href attribute.
@@ -28,8 +32,7 @@ export default class LinkListener extends HTMLElement {
             detail: {
                 requestConfiguration: {
                     searchParams,
-                    // TODO! Would help with infinite scrolling.
-                    mode: 'append',
+                    reset: this.#isResetButton(),
                 },
             },
         }));

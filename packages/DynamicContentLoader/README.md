@@ -117,7 +117,8 @@ the error message will be added to this element.
 `<link-listener></link-listener>`
 
 #### Attributes
-None
+- `data-reset` (`boolean`, optional): If set, clicking the button will emit an event with 
+`reset: true` in the `requestConfiguration` (see `input-updater`).
 
 #### Structure
 Wrap the `link-listener` around any number of links to update the content dynamically when they're
@@ -178,3 +179,15 @@ may be attached if it is requested by a listener.
 
 #### Structure
 Wrap around the facets provided by Drupal; component is quite Drupal-specific.
+
+### Input Updater
+
+Very Drupal-specific component to fetch and update the HTML of the filter inputs to reseet them 
+to their initial state (e.g. remove all input values) if the filters are reset.
+
+#### Exposed Element 
+`<input-updater></input-updater>`
+
+#### Attributes
+- `data-endpoint-url` (`string`, attribute is required but value may be empty): URL that should be
+fetched to get the HTML (as key of a JSON-stringified object).
