@@ -1,4 +1,4 @@
-import { readAttribute } from '../../tools/main.mjs';
+import { readAttribute } from '@joinbox/ui-tools';
 import createListener from '../../../src/shared/createListener.mjs';
 import loadYouTubeAPI from './loadYouTubeAPI.js';
 

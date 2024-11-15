@@ -1,4 +1,4 @@
-import readAttribute from '../../tools/src/readAttribute.mjs';
+import { readAttribute } from '@joinbox/ui-tools';
 import createListener from '../../../src/shared/createListener.mjs';
 import Template from './Template.mjs';
 
