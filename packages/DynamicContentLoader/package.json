@@ -4,7 +4,8 @@
   "description": "Extensible, loosely coupled custom elements that load content asynchronously, e.g. for filtered search results",
   "main": "src/main.js",
   "scripts": {
-    "test": "npx ava --verbose"
+    "test": "npx ava --verbose",
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
   },
   "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",

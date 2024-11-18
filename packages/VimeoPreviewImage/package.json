@@ -5,7 +5,8 @@
   "main": "VimeoPreviewImage.js",
   "scripts": {
     "test": "npx ava --verbose",
-    "build": "npx rollup --c rollup.config.mjs"
+    "build": "npx rollup --c rollup.config.mjs",
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
   },
   "author": "Felix Steiner <felix@joinbox.com>",
   "license": "ISC",
