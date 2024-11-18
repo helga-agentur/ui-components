@@ -79,8 +79,7 @@ export default class InputsUpdater extends HTMLElement {
         // could update the DOM at any time, but but dropdowns would be closed, checkboxes would
         // lose focus etc. Let's try to change as little as necessary to hide the fact that
         // things are updated from the user.
-        const url = reset ? `${this.#getEndpoint()}?${searchParams.toString()}` : null;
-        return url;
+        return reset ? `${this.#getEndpoint()}?${searchParams.toString()}` : null;
     }
 
     static defineCustomElement() {
