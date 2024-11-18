@@ -64,4 +64,5 @@ and import it before the elements via `import 'regenerator-runtime/runtime.js';`
 - [createDebounce](./packages/tools/README.md)
 
 ## Tests
-`npm i && npm test`
+* `npm test --workspace={packageName}` or `npm test -w {packageName}` to run tests of a specific workspace
+* `npm test --workspaces` or `npm test -ws` to run tests of all workspaces

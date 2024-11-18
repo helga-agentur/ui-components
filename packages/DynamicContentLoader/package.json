@@ -8,15 +8,6 @@
   },
   "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",
-  "ava": {
-    "files": [
-      "**/*.unit.mjs",
-      "**/*.integration.mjs"
-    ],
-    "nodeArguments": [
-      "--experimental-modules"
-    ]
-  },
   "publishConfig": {
     "access": "public"
   }

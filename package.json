@@ -12,6 +12,7 @@
     "url": "https://github.com/joinbox/ui-components/issues"
   },
   "homepage": "https://github.com/joinbox/ui-components#readme",
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
@@ -20,7 +21,7 @@
     "@joinbox/eslint-config-joinbox": "^1.0.11",
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.4",
-    "ava": "^5.3.1",
+    "ava": "^6.2.0",
     "babel-eslint": "^10.1.0",
     "jsdom": "^22.1.0",
     "rollup": "^3.25.3"

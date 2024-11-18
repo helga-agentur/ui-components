@@ -9,15 +9,7 @@
   },
   "author": "Felix Steiner <felix@joinbox.com>",
   "license": "ISC",
-  "ava": {
-    "files": [
-      "**/*.unit.mjs",
-      "**/*.integration.mjs"
-    ],
-    "nodeArguments": [
-      "--experimental-modules"
-    ]
-  },
+  "type": "module",
   "dependencies": {
     "@joinbox/ui-tools": "*"
   },
