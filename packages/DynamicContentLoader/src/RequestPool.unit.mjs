@@ -20,6 +20,7 @@ test('throws on wrong initialization', (t) => {
 test('throws when loadContent is called with invalid request configuration', (t) => {
     const pool = new RequestPool(createRequestObject());
     t.throws(() => pool.loadContent({ searchParams: 5 }), { message: /Property 'searchParams'.*is 5 instead/ });
+    t.throws(() => pool.loadContent({ searchParams: new URLSearchParams(), reset: 3 }), { message: /Property 'reset'.*is 3 instead/ });
 });
 
 test('throws when addUpdater is called with an invalid handler', (t) => {
@@ -68,8 +69,8 @@ test('calls all added handlers\' assembleURL method, fetches data, distributes i
     const pool = new RequestPool(Request);
 
     const createHandler = (url) => ({
-        assembleURL: (args) => {
-            assembleURLParams.push(args);
+        assembleURL: (...args) => {
+            assembleURLParams.push(...args);
             return url;
         },
         updateResponseStatus: (...args) => {
@@ -85,12 +86,13 @@ test('calls all added handlers\' assembleURL method, fetches data, distributes i
 
     // Invoke all handlers (by loading content on RequestPool)
     const queryParams = new URLSearchParams('a=b&c=d');
-    pool.loadContent({ searchParams: queryParams });
+    pool.loadContent({ searchParams: queryParams, reset: true, someInvalidParam: 3 });
 
     // Check if assembleURL was called with the correct arguments; 4 handlers have an assembleURL
     // function
     t.is(assembleURLParams.length, 4);
-    assembleURLParams.forEach((param) => t.deepEqual(param, { searchParams: queryParams }));
+    const expectedParams = { searchParams: queryParams, reset: true, someInvalidParam: 3 };
+    assembleURLParams.forEach((param) => t.deepEqual(param, expectedParams));
 
     // Check if URLs returned by all handler's assembleURL method are fetched; duplicates (in our
     // case 'url1' are excluded)

@@ -82,8 +82,7 @@ export default class FacetsUpdater extends HTMLElement {
     }
 
     #assembleURL({ searchParams }) {
-        const url = `${this.#getEndpoint()}?${searchParams.toString()}`;
-        return url;
+        return `${this.#getEndpoint()}?${searchParams.toString()}`;
     }
 
     static defineCustomElement() {

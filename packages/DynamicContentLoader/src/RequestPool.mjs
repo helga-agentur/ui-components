@@ -107,12 +107,14 @@ export default class RequestPool {
      * @param {{ searchParams: URLSearchParams }} requestConfiguration
      */
     static #validateRequestConfiguration(requestConfiguration) {
+        const validKeys = ['searchParams', 'reset'];
         const invalidKeys = Object.keys(requestConfiguration)
-            .filter((item) => item !== 'searchParams');
+            .filter((item) => !validKeys.includes(item));
         if (invalidKeys.length) {
             console.warn(
-                'Keys %s are not supported for requestConfiguration; only \'searchParams\' is supported.',
-                invalidKeys.join(', '),
+                'Keys %s are not supported for requestConfiguration; only %s are supported.',
+                invalidKeys.map((key) => `"${key}"`).join(', '),
+                validKeys.map((key) => `"${key}"`).join(', '),
             );
         }
         if (
@@ -121,6 +123,12 @@ export default class RequestPool {
             && !(requestConfiguration.searchParams instanceof URLSearchParams)
         ) {
             throw new Error(`Property 'searchParams' passed as requestConfiguration must be an instance of URLSearchParams, is ${requestConfiguration.searchParams} instead.`);
+        }
+        if (
+            Object.hasOwn(requestConfiguration, 'reset')
+            && typeof requestConfiguration.reset !== 'boolean'
+        ) {
+            throw new Error(`Property 'reset' passed as requestConfiguration must be a boolean, is ${requestConfiguration.reset} instead.`);
         }
     }
 
