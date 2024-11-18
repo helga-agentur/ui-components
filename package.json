@@ -2,14 +2,6 @@
   "name": "@joinbox/ui-components",
   "version": "3.0.1",
   "private": true,
-  "scripts": {
-    "test": "npx lerna run test",
-    "bootstrap": "npx lerna bootstrap --hoist",
-    "createVersion": "npx lerna version --conventional-commits --ignore-changes",
-    "release": "npx lerna publish from-package",
-    "build": "npx lerna run build",
-    "ls": "npx lerna ls"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/joinbox/ui-components.git"
@@ -20,10 +12,13 @@
     "url": "https://github.com/joinbox/ui-components/issues"
   },
   "homepage": "https://github.com/joinbox/ui-components#readme",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "@babel/eslint-parser": "^7.22.5",
     "@joinbox/eslint-config-joinbox": "^1.0.11",
+    "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.4",
     "ava": "^5.3.1",
     "babel-eslint": "^10.1.0",
