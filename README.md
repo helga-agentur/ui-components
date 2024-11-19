@@ -27,6 +27,17 @@ most recent Git tag, therefore this step is essential.
 1. Push tags to server `git push origin <tag-name>`
 1. Run `npm run release` to publish packages
 
+### Run npm scripts across workspaces
+* `npm run {script} --workspace={packageName}` or `npm run {script} -w {packageName}` to run tests of a specific workspace
+* `npm run {script} --workspaces` or `npm run {script} -ws` to run tests of all workspaces
+  * By running the command with the `--if-present` flag, npm will ignore workspaces missing target script.
+    E.g. `npm run build --workspaces --if-present`
+
+#### Scripts
+* run tests: `npm test`
+* lint JS files: `npm run lint`
+* run build script: `npm run build`
+
 ### Update All Packages
 - `npx lerna exec -- npx npm-check-updates -u`
 - `npx lerna exec -- npm i`
@@ -62,7 +73,3 @@ and import it before the elements via `import 'regenerator-runtime/runtime.js';`
 - [once](./packages/tools/README.md)
 - [slide](./packages/slide/README.md), import as `import { slide } from '@joinbox/ui-components'`
 - [createDebounce](./packages/tools/README.md)
-
-## Tests
-* `npm test --workspace={packageName}` or `npm test -w {packageName}` to run tests of a specific workspace
-* `npm test --workspaces` or `npm test -ws` to run tests of all workspaces
