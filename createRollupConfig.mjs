@@ -1,4 +1,5 @@
 import terser from '@rollup/plugin-terser';
+import resolve from '@rollup/plugin-node-resolve';
 
 /**
 * Creates a simple rollup config from the files passed in
@@ -23,4 +24,5 @@ export default (files, format = 'iife', minify = true) => files.map((file) => ({
             format,
         },
     ],
+    plugins: [resolve()],
 }));

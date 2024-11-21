@@ -1,6 +1,7 @@
 import { join } from 'path';
 import jsdom from 'jsdom';
 import { rollup } from 'rollup';
+import resolve from '@rollup/plugin-node-resolve';
 
 const { JSDOM } = jsdom;
 
@@ -49,6 +50,7 @@ export default async ({
     for await (const scriptFile of scripts) {
         const inputOptions = {
             input: join(baseWithoutPrefix, scriptFile),
+            plugins: [resolve()],
         };
         const outputOptions = {
             format: 'es',
