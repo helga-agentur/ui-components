@@ -1,5 +1,5 @@
 import submitForm from './submitForm.js';
-import debounce from '../../tools/src/debounce.mjs';
+import { debounce } from '@joinbox/ui-tools';
 
 /* global HTMLElement */
 

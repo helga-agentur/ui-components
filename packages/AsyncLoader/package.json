@@ -1,31 +1,18 @@
 {
-  "name": "@joinbox/async-loader",
+  "name": "@helga-agency/async-loader",
   "version": "1.8.0",
   "description": "Custom element that loads content through XHR",
   "main": "AsyncLoaderElement.js",
   "scripts": {
     "test": "npx ava --verbose",
-    "build": "npx rollup --c rollup.config.mjs"
+    "build": "npx rollup --c rollup.config.mjs",
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@helga-agency/eslint-config-joinbox/index.js"
   },
-  "author": "Felix Steiner <felix@joinbox.com>",
+  "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",
-  "ava": {
-    "files": [
-      "**/*.unit.mjs",
-      "**/*.integration.mjs"
-    ],
-    "nodeArguments": [
-      "--experimental-modules"
-    ]
-  },
-  "devDependencies": {
-    "@babel/eslint-parser": "^7.22.5",
-    "@joinbox/eslint-config-joinbox": "^1.0.11",
-    "@rollup/plugin-terser": "^0.4.4",
-    "ava": "^5.3.1",
-    "jsdom": "^22.1.0",
-    "lerna": "^7.1.0",
-    "rollup": "^3.25.3"
+  "type": "module",
+  "dependencies": {
+    "@helga-agency/ui-tools": "*"
   },
   "publishConfig": {
     "access": "public"

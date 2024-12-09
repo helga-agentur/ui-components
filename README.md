@@ -2,34 +2,37 @@
 
 ## Develop
 
-### Caution
-- Do not use lerna 8, it's freakin' buggy.
-- Instead migrate to separate repos for each package and use
-[workspaces](https://docs.npmjs.com/cli/v7/using-npm/workspaces) (or use PNPM or whatev)
-
 ### Intro
-- This is a monorepo that uses lerna to publish the components as individual packages
+- This is a monorepo that uses npm workspaces to publish the components as individual packages
 
 ### Init
-- Run `npm i && npx lerna exec --npm i` to initialize the whole repo locally (install node modules)
-- Link packages if necessary (`lerna bootstrap` is deprecated)
+Run `npm i` in the root directory. It will install all dependencies for all workspaces.
 
 ### Release
-1. Run `npm run test` in the **root directory** to run all tests in all packages
-1. Run `npm run build`
+1. Run `npm run test -ws` in the **root directory** to run all tests in all packages
+1. Run `npm run build -ws --if-present` to run build scripts in all packages where one exits
 1. Commit and push the generated files
 1. Checkout main and merge feature branch
-1. Run `npm run createVersion` in the root directory to create new versions for all packages with
-changes since their last release; versions are created automatically based on 
-[conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) and on the previous Git tag
-1. Create a Git tag; when versioning, conventional commits are compared to to the
-most recent Git tag, therefore this step is essential.
-1. Push tags to server `git push origin <tag-name>`
-1. Run `npm run release` to publish packages
+1. Run `npm version <patch|major|minor> -w <packageName>` to create a new version for a specific package
+   or `-ws` for all packages.
+1. Run `npm publish -w <packageName>` to publish a specific package or `-ws` for all packages.
 
-### Update All Packages
-- `npx lerna exec -- npx npm-check-updates -u`
-- `npx lerna exec -- npm i`
+### Run npm commands across workspaces
+Configuration flags for npm commands in relation to workspaces:
+
+* `--workspace=<packageName>` or `-w <packageName>` to run a command in a specific workspace.
+  Valid values for `<packageName>` are either:
+  * Workspace names (e.g. `@joinbox/async-loader`)
+  * Path to a workspace directory (e.g. `packages/AsyncLoader`)
+  * Path to a parent workspace directory (will result in selecting all workspaces within that folder)
+* `--workspaces` or `-ws` to run a command across all workspaces. 
+  * By running the command with the `--if-present` flag, npm will ignore workspaces missing the target script;
+    e.g. `npm run build --workspaces --if-present`.
+
+#### Scripts
+* Run tests: `npm test`
+* Lint JS files: `npm run lint`
+* Run build script: `npm run build`
 
 ## Use
 - All components are [custom elements](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements). 
@@ -63,5 +66,6 @@ and import it before the elements via `import 'regenerator-runtime/runtime.js';`
 - [slide](./packages/slide/README.md), import as `import { slide } from '@joinbox/ui-components'`
 - [createDebounce](./packages/tools/README.md)
 
-## Tests
-`npm i && npm test`
+## Changesets
+[Changesets](https://github.com/changesets/changesets) helps to manage package versioning and publishing. Acctually it is not in use.
+This is just a reminder in case we want to use it sometime.

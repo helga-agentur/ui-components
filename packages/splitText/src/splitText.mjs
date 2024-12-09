@@ -1,7 +1,7 @@
 /* global HTMLElement */
 
 import splitTextContent from './splitTextContent.mjs';
-import debounce from '../../tools/src/debounce.mjs';
+import { debounce } from '@joinbox/ui-tools';
 import watchResize from './watchResize.mjs';
 import normalizeScrollAxes from './normalizeScrollAxes.mjs';
 
