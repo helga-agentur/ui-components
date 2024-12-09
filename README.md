@@ -2,13 +2,8 @@
 
 ## Develop
 
-### Caution
-- Do not use lerna 8, it's freakin' buggy.
-- Instead migrate to separate repos for each package and use
-[workspaces](https://docs.npmjs.com/cli/v7/using-npm/workspaces) (or use PNPM or whatev)
-
 ### Intro
-- This is a monorepo that uses lerna to publish the components as individual packages
+- This is a monorepo that uses npm workspaces to publish the components as individual packages
 
 ### Init
 Run `npm i` in the root directory. It will install all dependencies for all workspaces.
@@ -70,3 +65,7 @@ and import it before the elements via `import 'regenerator-runtime/runtime.js';`
 - [once](./packages/tools/README.md)
 - [slide](./packages/slide/README.md), import as `import { slide } from '@joinbox/ui-components'`
 - [createDebounce](./packages/tools/README.md)
+
+## Changesets
+[Changesets](https://github.com/changesets/changesets) helps to manage package versioning and publishing. Acctually it is not in use.
+This is just a reminder in case we want to use it sometime.
