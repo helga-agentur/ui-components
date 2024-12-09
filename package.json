@@ -4,14 +4,14 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joinbox/ui-components.git"
+    "url": "git+https://github.com/helga-agentur/ui-components.git"
   },
   "author": "Felix Steiner <felix@joinbox.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/joinbox/ui-components/issues"
+    "url": "https://github.com/helga-agentur/ui-components/issues"
   },
-  "homepage": "https://github.com/joinbox/ui-components#readme",
+  "homepage": "https://github.com/helga-agentur/ui-components#readme",
   "type": "module",
   "workspaces": [
     "packages/*"

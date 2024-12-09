@@ -1,14 +1,14 @@
 {
-  "name": "@joinbox/vimeopreviewimage",
+  "name": "@helga-agency/vimeopreviewimage",
   "version": "1.2.0",
   "description": "Vimeo preview image custom element",
   "main": "VimeoPreviewImage.js",
   "scripts": {
     "test": "npx ava --verbose",
     "build": "npx rollup --c rollup.config.mjs",
-    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@helga-agency/eslint-config-joinbox/index.js"
   },
-  "author": "Felix Steiner <felix@joinbox.com>",
+  "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",
   "devDependencies": {
     "whatwg-fetch": "^3.6.2"

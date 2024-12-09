@@ -1,19 +1,19 @@
 {
-  "name": "@joinbox/youtubeplayer",
+  "name": "@helga-agency/youtubeplayer",
   "version": "1.4.0",
   "description": "YouTube custom element",
   "main": "YouTubePlayerElement.js",
   "scripts": {
     "test": "npx ava --verbose",
     "build": "npx rollup --c rollup.config.mjs",
-    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@helga-agency/eslint-config-joinbox/index.js"
   },
-  "author": "Felix Steiner <felix@joinbox.com>",
+  "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@joinbox/ui-tools": "*"
+    "@helga-agency/ui-tools": "*"
   }
 }

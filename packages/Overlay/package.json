@@ -1,14 +1,14 @@
 {
-  "name": "@joinbox/overlay",
+  "name": "@helga-agency/overlay",
   "version": "2.2.0",
   "description": "Overlay component that can be opened and closed via OverlayButtons",
   "main": "OverlayElement.js",
   "scripts": {
     "test": "npx ava --verbose",
     "build": "npx rollup --c rollup.config.mjs",
-    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@helga-agency/eslint-config-joinbox/index.js"
   },
-  "author": "Felix Steiner <felix@joinbox.com>",
+  "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",
   "publishConfig": {
     "access": "public"

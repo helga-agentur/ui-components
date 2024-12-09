@@ -1,13 +1,13 @@
 {
-  "name": "@joinbox/ui-tools",
+  "name": "@helga-agency/ui-tools",
   "version": "1.4.0",
   "description": "Provides repeatedly used tools for frontend and UI JS development",
   "scripts": {
     "test": "npx ava --verbose",
-    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@helga-agency/eslint-config-joinbox/index.js"
   },
   "main": "main.mjs",
-  "author": "Felix Steiner <felix@joinbox.com>",
+  "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",
   "type": "module",
   "publishConfig": {

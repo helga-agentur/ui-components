@@ -1,14 +1,14 @@
 {
-  "name": "@joinbox/slider",
+  "name": "@helga-agency/slider",
   "version": "1.1.0",
   "description": "Simple slider for scrollable panes",
   "main": "SliderElement.js",
   "scripts": {
     "test": "npx ava --verbose",
     "build": "npx rollup --c rollup.config.mjs",
-    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@helga-agency/eslint-config-joinbox/index.js"
   },
-  "author": "Felix Steiner <felix@joinbox.com>",
+  "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",
   "publishConfig": {
     "access": "public"
