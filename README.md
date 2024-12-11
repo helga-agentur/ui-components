@@ -15,6 +15,8 @@ Run `npm i` in the root directory. It will install all dependencies for all work
 1. Checkout main and merge feature branch
 1. Run `npm version <patch|major|minor> -w <packageName>` to create a new version for a specific package
    or `-ws` for all packages.
+1. Commit `package.json` files with new version.
+1. Create tag for packages that will change their version: `@helga-agency/<packageName>@<version>`
 1. Run `npm publish -w <packageName>` to publish a specific package or `-ws` for all packages.
 
 ### Run npm commands across workspaces
@@ -22,7 +24,7 @@ Configuration flags for npm commands in relation to workspaces:
 
 * `--workspace=<packageName>` or `-w <packageName>` to run a command in a specific workspace.
   Valid values for `<packageName>` are either:
-  * Workspace names (e.g. `@joinbox/async-loader`)
+  * Workspace names (e.g. `@helga-agency/async-loader`)
   * Path to a workspace directory (e.g. `packages/AsyncLoader`)
   * Path to a parent workspace directory (will result in selecting all workspaces within that folder)
 * `--workspaces` or `-ws` to run a command across all workspaces. 
