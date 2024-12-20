@@ -10,7 +10,7 @@ Reads, transforms and validates an attribute from an HTML element.
 ### Usage
 
 ```
-import { readAttribute } from '@joinbox/ui-tools';
+import { readAttribute } from '@helga-agency/ui-tools';
 
 const element = document.querySelector('div.className');
 readAttribute(element, 'attributeName', { transform: (value) => parseInt(value, 10) });
@@ -48,7 +48,7 @@ Creates a debounced function. Primarily needed for performant scroll (and window
 ### Usage
 
 ```
-import { debounce } from '@joinbox/ui-tools';
+import { debounce } from '@helga-agency/ui-tools';
 
 const callbackFunction = () => { console.log('update'); };
 const debouncedFunction = debounce(callbackFunction, 200);
@@ -81,7 +81,7 @@ especially to implement Drupal behaviors.
 ### Usage
 
 ```
-import { once } from '@joinbox/ui-tools';
+import { once } from '@helga-agency/ui-tools';
 
 const executeOnlyOnce = () => { console.log('executing'); };
 const element = document.querySelector('.executing-element');
@@ -122,7 +122,7 @@ the events described happens.
 ### Usage
 
 ```
-import { measureElement } from '@joinbox/ui-tools';
+import { measureElement } from '@helga-agency/ui-tools';
 
 const element = document.querySelector('div.className');
 const dimensions = measureElement({ element, updateOnIntersection: true });

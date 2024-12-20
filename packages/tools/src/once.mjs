@@ -1,7 +1,7 @@
 /**
  * Makes sure a certain function is only called once on a given element.
  * @example
- * import { once } from @joinbox/ui-components;
+ * import { once } from @helga-agency/ui-components;
  * const element = document.querySelector('.my-element');
  * once(element, 'uniqueName', () => {
  *     console.log('will only be called once');

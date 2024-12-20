@@ -1,12 +1,12 @@
 {
-  "name": "@joinbox/ui-components",
+  "name": "@helga-agency/ui-components",
   "version": "5.0.0",
   "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/helga-agentur/ui-components.git"
   },
-  "author": "Felix Steiner <felix@joinbox.com>",
+  "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/helga-agentur/ui-components/issues"

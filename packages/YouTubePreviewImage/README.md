@@ -7,7 +7,7 @@
 
 ````html
     <script type="module">
-        import @joinbox/youtubepreviewimage;
+        import @helga-agency/youtubepreviewimage;
     </script>
     <youtube-preview-image data-video-id="m7MtIv9a0A4">
         <img src="https://picsum.photos/200/300">

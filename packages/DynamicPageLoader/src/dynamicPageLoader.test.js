@@ -15,7 +15,7 @@
 
     handleLinkClicks({
         linkElements: links,
-        checkLink: link => !link.includes('joinbox.com'),
+        checkLink: link => !link.includes('helga.ch'),
     });
     handlePopState();
 

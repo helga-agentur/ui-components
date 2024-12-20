@@ -1,4 +1,4 @@
-import { once } from '@joinbox/ui-tools';
+import { once } from '@helga-agency/ui-tools';
 
 /* global window, CustomEvent */
 

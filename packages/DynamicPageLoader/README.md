@@ -46,7 +46,7 @@ import {
     canBeIdentical,
     isIdentical,
     applyAttributes,
-} from '@joinbox/ui-components/DynamicPageLoader';
+} from '@helga-agency/ui-components/DynamicPageLoader';
 
 // Prevents loading of a new page when a link is clicked. Uses pushState to update the URL 
 // displayed by the browser instead and emits 'urlchange' event that will be handled later.

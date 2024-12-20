@@ -1,5 +1,5 @@
 import submitForm from './submitForm.js';
-import { debounce } from '@joinbox/ui-tools';
+import { debounce } from '@helga-agency/ui-tools';
 
 /* global HTMLElement */
 

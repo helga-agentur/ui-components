@@ -21,7 +21,7 @@ unit (e.g. day, week etc.) to use.
 
 <!-- Embed script-->
 <script type="module">
-    import @joinbox/relative-time;
+    import @helga-agency/relative-time;
 </script>
 ```
 

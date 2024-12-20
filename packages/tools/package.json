@@ -4,7 +4,7 @@
   "description": "Provides repeatedly used tools for frontend and UI JS development",
   "scripts": {
     "test": "npx ava --verbose",
-    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@helga-agency/eslint-config-joinbox/index.js"
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
   },
   "main": "main.mjs",
   "author": "Felix Steiner <felix@helga.ch>",

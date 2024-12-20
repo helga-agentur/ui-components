@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npx ava --verbose",
     "build": "npx rollup --c rollup.config.mjs",
-    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@helga-agency/eslint-config-joinbox/index.js"
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
   },
   "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",

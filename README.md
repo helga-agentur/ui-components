@@ -1,4 +1,4 @@
-# Re-usable UI Components for and from Joinbox
+# Re-usable UI Components for and from Helga
 
 ## Develop
 
@@ -65,7 +65,7 @@ and import it before the elements via `import 'regenerator-runtime/runtime.js';`
 - [readAttribute](./packages/tools/README.md)
 - [splitText](./packages/splitText/README.md)
 - [once](./packages/tools/README.md)
-- [slide](./packages/slide/README.md), import as `import { slide } from '@joinbox/ui-components'`
+- [slide](./packages/slide/README.md), import as `import { slide } from '@helga-agency/ui-components'`
 - [createDebounce](./packages/tools/README.md)
 
 ## Changesets
