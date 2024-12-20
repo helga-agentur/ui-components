@@ -116,7 +116,13 @@ export default class RequestPool {
         if (typeof requestConfiguration !== 'object' || requestConfiguration === null) {
             throw new Error(`Parameter requestConfiguration must be an object, is ${requestConfiguration} instead.`);
         }
-        const validKeys = ['searchParams', 'reset'];
+        /**
+         * reset: All content should be loaded and completely replaced (e.g. when a user resets
+         * a form)
+         * action: Meta information about the action that initiated the request; currently
+         * paginateReplace and paginateAppend.
+         */
+        const validKeys = ['searchParams', 'reset', 'action'];
         const invalidKeys = Object.keys(requestConfiguration)
             .filter((item) => !validKeys.includes(item));
         if (invalidKeys.length) {

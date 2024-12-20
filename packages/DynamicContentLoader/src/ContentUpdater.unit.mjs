@@ -44,13 +44,13 @@ test('assembles correct URL', async (t) => {
     updater.setAttribute('data-endpoint-url', '/test');
     t.deepEqual(
         getRequestConfig({ searchParams: new URLSearchParams('q=5') }),
-        { url: '/test?q=5' },
+        { url: '/test?q=5', data: { action: undefined } },
     );
     // URL is empty
     updater.setAttribute('data-endpoint-url', '');
     t.deepEqual(
-        getRequestConfig({ searchParams: new URLSearchParams('q=5') }), 
-        { url: '?q=5' },
+        getRequestConfig({ searchParams: new URLSearchParams('q=5'), action: 'paginateAppend' }), 
+        { url: '?q=5', data: { action: 'paginateAppend' } },
     ); 
     t.is(errors.length, 0);
 });
@@ -107,5 +107,56 @@ test('updates content', async (t) => {
     t.is(error.innerHTML, 'ERROR: Status 404 – test');
     // Finally …
     t.is(loading.innerHTML, 'Loading');
+    t.is(errors.length, 0);
+});
+
+test('appends content if requested', async (t) => {
+    const addEventsFired = [];
+    const { document, errors, window } = await setup(true);
+    window.addEventListener('addDynamicContentUpdater', (ev) => {
+        addEventsFired.push(ev);
+    });
+    const updater = document.createElement('content-updater');
+    updater.setAttribute('data-is-main-content', '');
+    document.body.appendChild(updater);
+    await new Promise((resolve) => { setTimeout(resolve); });
+    window.scrollTo = () => {};
+    const children = `
+        <div data-loading hidden>Loading</div>
+        <div data-error hidden>Error</div>
+        <div data-content>Content</div>
+    `;
+    updater.innerHTML = children;
+    const { updateResponseStatus } = addEventsFired[0].detail;
+    updateResponseStatus({ status: 'loaded', data: { action: 'paginateAppend' }, content: 'test' });
+    t.is(updater.querySelector('[data-content]').innerHTML, 'Contenttest');
+    t.is(errors.length, 0);
+});
+
+test('scrolls if appropriate', async (t) => {
+    const addEventsFired = [];
+    const { document, errors, window } = await setup(true);
+    window.addEventListener('addDynamicContentUpdater', (ev) => {
+        addEventsFired.push(ev);
+    });
+    const updater = document.createElement('content-updater');
+    updater.setAttribute('data-is-main-content', '');
+    document.body.appendChild(updater);
+    await new Promise((resolve) => { setTimeout(resolve); });
+    let scrolledArgs = [];
+    window.scrollTo = (...args) => { scrolledArgs.push(args); };
+    const children = `
+        <div data-loading hidden>Loading</div>
+        <div data-error hidden>Error</div>
+        <div data-content>Content</div>
+    `;
+    updater.innerHTML = children;
+    const { updateResponseStatus } = addEventsFired[0].detail;
+    updateResponseStatus({
+        status: 'loaded',
+        content: 'test',
+        data: { action: 'paginateReplace' },
+    });
+    t.is(scrolledArgs.length, 1);
     t.is(errors.length, 0);
 });

@@ -34,6 +34,22 @@ test('emits loadDynamicContent and uses closest href\'s query string as event de
     linkListener.dispatchEvent(new window.MouseEvent('click'));
     t.is(events.length, 2);
     t.is(events[1].detail.requestConfiguration.searchParams.toString(), 'q=5');
+    t.is(events[1].detail.requestConfiguration.action, 'paginateReplace');
     // Finally …
+    t.is(errors.length, 0);
+});
+
+test('respects append mode', async (t) => { 
+    const { document, errors, window } = await setup(true);
+    const link = document.createElement('a');
+    link.setAttribute('href', '/test');
+    document.body.appendChild(link);
+    const linkListener = document.createElement('link-listener');
+    linkListener.setAttribute('data-append', '');
+    link.appendChild(linkListener);
+    const events = [];
+    window.addEventListener('loadDynamicContent', (ev) => { events.push(ev); });
+    linkListener.dispatchEvent(new window.MouseEvent('click'));
+    t.is(events[0].detail.requestConfiguration.action, 'paginateAppend');
     t.is(errors.length, 0);
 });

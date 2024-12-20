@@ -27,14 +27,18 @@ export default class ContentUpdater extends HTMLElement {
         }));
     }
 
-    #updateResponseStatus({ status, content, response }) {
+    #updateResponseStatus({ status, content, response, data }) {
         if (!['loading', 'loaded', 'failed'].includes(status)) {
             throw new Error(`Expected statusUpdate.status to be one of 'loading', 'loaded' or 'failed', got ${status} instead.`);
         }
         let finalContent;
         if (status === 'loaded') finalContent = content;
         else if (status === 'failed') finalContent = `ERROR: Status ${response.status} – ${content}`;
-        this.#updateDOM(status, finalContent);
+        this.#updateDOM(status, finalContent, data);
+    }
+
+    #isMainContent() {
+        return this.hasAttribute('data-is-main-content');
     }
 
     /**
@@ -42,12 +46,13 @@ export default class ContentUpdater extends HTMLElement {
      * @param {string} status - valid values are 'loading', 'loaded' and 'failed'
      * @param {string?} content - HTML content to set; empty when status is 'loading'
      */
-    #updateDOM(status, content) {
+    #updateDOM(status, content, data) {
         const elements = {
             loading: this.querySelector('[data-loading]'),
             failed: this.querySelector('[data-error]'),
             loaded: this.querySelector('[data-content]'),
         };
+        // Validate elements and update their visibility
         Object.keys(elements).forEach((key) => {
             if (!elements[key]) {
                 throw (new Error(`Make sure that the ContentUpdater has three children with the following data attributes: data-loading, data-error and data-content; missing element to display status "${status}".`));
@@ -55,20 +60,26 @@ export default class ContentUpdater extends HTMLElement {
             elements[key].hidden = (key !== status);
         });
         const activeElement = elements[status];
-        if (['failed', 'loaded'].includes(status)) activeElement.innerHTML = content;
-        // Feedback to this feature was mostly negative; keep code for now, find an improvement
-        // in the future (only scroll when user paginates, e.g.)
-        // Make sure the active element is visible but only if it's the main content (we don't want
-        // to scroll to the pagination *and* the main content at the same time)
-        // if (this.hasAttribute('data-is-main-content')) {
+        // Replace content if an error happens *or* if it's not appended; so replacing content is
+        // the fallback for all loaded states.
+        const replaceContent = (status === 'failed')
+            || (status === 'loaded' && data?.action !== 'paginateAppend')
+        const appendContent = (status === 'loaded' && data?.action === 'paginateAppend')
+        if (replaceContent) activeElement.innerHTML = content;
+        else if (appendContent) activeElement.innerHTML += content;
+        // Make sure the active element is visible but *only* if it's the main content (we don't
+        // want to scroll to the pagination *and* the main content at the same time).
+        // Only scroll if a user paginated and new page is not appended, but replaced. Don't scroll
+        // when the user changes filters.
+        if (this.#isMainContent() && data?.action === 'paginateReplace') {
             // Use `scrollTop` instead of `scrollIntoView` because `scrollIntoView` only makes sure
             // that the element is visible, but not that it's at the top of the viewport. If the
             // pagination is below the the main content and a user changes the page, 
             // `scrollIntoView` might not scroll at all if the main content is visible; in that
             // case, we want to scroll the the main content's top, though.
-            // const scrollTop = window.scrollY + activeElement.getBoundingClientRect().top;
-            // window.scrollTo({ top: scrollTop, behavior: 'smooth' });
-        // }
+            const scrollTop = window.scrollY + activeElement.getBoundingClientRect().top;
+            window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+        }
     }
 
     #getEndpointURL() {
@@ -81,8 +92,13 @@ export default class ContentUpdater extends HTMLElement {
         return endpointURL;
     }
 
-    #getRequestConfig({ searchParams }) {
-        return { url: `${this.#getEndpointURL()}?${searchParams.toString()}` };
+    #getRequestConfig({ searchParams, action }) {
+        return {
+            url: `${this.#getEndpointURL()}?${searchParams.toString()}`,
+            // Pass action to the request so that we can handle the data according to the event
+            // that initiated the request once we get it.
+            data: { action },
+        };
     }
 
     static defineCustomElement() {

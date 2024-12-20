@@ -46,16 +46,14 @@ for specific use cases.
         <div data-content>Initial content</div>
     </content-updater>
 
-    <a href="/page?q=5">
-        <link-listener>
-            <!-- This content-updater fetches the new pagination when the page changes-->
-            <content-updater data-endpoint-url="/page">
-                <div data-loading hidden>Loading…</div>
-                <div data-error hidden><!-- Will be populated when needed --></div>
-                <div data-content>Page 3</div>
-            </content-updater>
-        <link-listener>
-    </a>
+    <link-listener data-append>
+        <!-- This content-updater fetches the new pagination when the page changes-->
+        <content-updater data-endpoint-url="/page">
+            <div data-loading hidden>Loading…</div>
+            <div data-error hidden><!-- Will be populated when needed --></div>
+            <div data-content><a href="/page?q=5">Page 5</a></div>
+        </content-updater>
+    <link-listener>
 ```
 
 ## Components
@@ -95,8 +93,9 @@ None
 - `data-endpoint-url` (`string`, attribute is required but value may be empty): URL that should be
 fetched; a query string may be automatically attached if it is requested by a listener
 (e.g. to paginate or filter the view).
-- `data-is-main-content` (`boolean`, optional): If set, the browser will scroll to the top of the
-element when the content changes.
+- `data-is-main-content` (`boolean`, optional): If set, content will be appended (instead of
+replaced) when `link-listener` uses the `data-append` attribute. If set, the browser will scroll
+to the top of the element *if* action is `paginageReplace` (see `<link-listener>`);
 
 #### Content
 The following elements **must** be provided within `<aync-loader>`:
@@ -119,6 +118,8 @@ the error message will be added to this element.
 #### Attributes
 - `data-reset` (`boolean`, optional): If set, clicking the button will emit an event with 
 `reset: true` in the `requestConfiguration` (see `input-updater`).
+- `data-append` (`boolean`, optional): If set, new content will be appended to the main 
+`content-updater` (and not replace it) by setting the `action` to `paginateAppend`.
 
 #### Structure
 Wrap the `link-listener` around any number of links to update the content dynamically when they're

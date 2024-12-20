@@ -17,6 +17,10 @@ export default class LinkListener extends HTMLElement {
         return this.hasAttribute('data-reset');
     }
 
+    #isAppend() {
+        return this.hasAttribute('data-append');
+    }
+
     #handleClick(event) {
         // If this element is nested within an a, the click target will be the element, not the a;
         // get the closest parent that contains a href attribute.
@@ -33,6 +37,7 @@ export default class LinkListener extends HTMLElement {
                 requestConfiguration: {
                     searchParams,
                     reset: this.#isResetButton(),
+                    action: this.#isAppend() ? 'paginateAppend' : 'paginateReplace',
                 },
             },
         }));
