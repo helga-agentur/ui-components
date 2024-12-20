@@ -60,11 +60,11 @@ export default class ContentUpdater extends HTMLElement {
             elements[key].hidden = (key !== status);
         });
         const activeElement = elements[status];
-        // Replace content if an error happens *or* if it's not appended; so replacing content is
-        // the fallback for all loaded states.
-        const replaceContent = (status === 'failed')
-            || (status === 'loaded' && data?.action !== 'paginateAppend')
-        const appendContent = (status === 'loaded' && data?.action === 'paginateAppend')
+        // Only append content if the user paginates accordingly *and* it's the main content block.
+        // In all other cases, replace the content – except when the status is 'loading'.
+        const appendContentOnLoad = (data?.action === 'paginateAppend' && this.#isMainContent());
+        const appendContent = status === 'loaded' && appendContentOnLoad;
+        const replaceContent = (status === 'failed') || (status === 'loaded' && !appendContent);
         if (replaceContent) activeElement.innerHTML = content;
         else if (appendContent) activeElement.innerHTML += content;
         // Make sure the active element is visible but *only* if it's the main content (we don't
