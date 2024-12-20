@@ -31,11 +31,11 @@ All components are independent from one another. It, however, makes sense, to us
     </audio-component>
 
 <!-- Import all components you use -->
-    <script type="module" src="@joinbox/media/AudioComponentElement.js"></script>
-    <script type="module" src="@joinbox/media/MediaPlayPauseComponentElement.js"></script>
-    <script type="module" src="@joinbox/media/MediaTimeComponentElement.js"></script>
-    <script type="module" src="@joinbox/media/MediaTimelineComponentElement.js"></script>
-    <script type="module" src="@joinbox/media/MediaVolumeComponentElement.js"></script>
+    <script type="module" src="@helga-agency/media/AudioComponentElement.js"></script>
+    <script type="module" src="@helga-agency/media/MediaPlayPauseComponentElement.js"></script>
+    <script type="module" src="@helga-agency/media/MediaTimeComponentElement.js"></script>
+    <script type="module" src="@helga-agency/media/MediaTimelineComponentElement.js"></script>
+    <script type="module" src="@helga-agency/media/MediaVolumeComponentElement.js"></script>
 ````
 
 

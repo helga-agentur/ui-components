@@ -1,4 +1,4 @@
-import { readAttribute } from '@joinbox/ui-tools';
+import { readAttribute } from '@helga-agency/ui-tools';
 import createListener from '../../../src/shared/createListener.mjs';
 import Template from './Template.mjs';
 

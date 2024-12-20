@@ -88,8 +88,8 @@ Features:
 </div>
 
 
-<script type="module" src="@joinbox/formsync/FormSyncElement.js"></script>
-<script type="module" src="@joinbox/formsync/FormSubmitButtonElement.js"></script>
+<script type="module" src="@helga-agency/formsync/FormSyncElement.js"></script>
+<script type="module" src="@helga-agency/formsync/FormSubmitButtonElement.js"></script>
 ````
 
 ## Components

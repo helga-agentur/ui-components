@@ -7,7 +7,7 @@
 
 ````html
     <script type="module">
-        import @joinbox/vimeopreviewimage;
+        import @helga-agency/vimeopreviewimage;
     </script>
     <vimeo-preview-image data-video-id="558118399">
         <img src="https://picsum.photos/640/360">

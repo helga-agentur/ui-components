@@ -13,7 +13,8 @@ const setup = async(hideErrors) => {
 const polyfillFetch = (document) => {
     // JSDOM does not support fetch; inject it
     const base = dirname(fileURLToPath(new URL(import.meta.url)));
-    const fetchPath = '../node_modules/whatwg-fetch/dist/fetch.umd.js';
+    // Node modules are hoisted because we're working in an NPM workspace (they're at root level)
+    const fetchPath = '../../../node_modules/whatwg-fetch/dist/fetch.umd.js';
     const fetchContent = readFileSync(join(base, fetchPath), 'utf8');
     const fetchScript = document.createElement('script');
     fetchScript.textContent = fetchContent;

@@ -5,7 +5,7 @@ import getDOM from '../../../src/testHelpers/getDOM.mjs';
 
 const setup = async(hideErrors) => {
     const basePath = dirname(fileURLToPath(new URL(import.meta.url)));
-    const jsdomOptions = { url: 'https://joinbox.com' };
+    const jsdomOptions = { url: 'https://helga.ch' };
     return getDOM({ basePath, scripts: ['handleLinkClicks.window.js'], hideErrors, jsdomOptions });
 };
 
@@ -27,7 +27,7 @@ test('dispatches urlchange event and updates state', async(t) => {
     link.click();
     t.is(events.length, 1);
     t.is(events[0].detail.url, '/test');
-    t.is(window.location.href, 'https://joinbox.com/test');
+    t.is(window.location.href, 'https://helga.ch/test');
     t.is(errors.length, 0);
 });
 
@@ -66,6 +66,6 @@ test('respects checkLink hook', async(t) => {
     document.body.appendChild(script);
     link.click();
     t.is(events.length, 0);
-    t.is(window.location.href, 'https://joinbox.com/');
+    t.is(window.location.href, 'https://helga.ch/');
     t.is(errors.length, 0);
 });

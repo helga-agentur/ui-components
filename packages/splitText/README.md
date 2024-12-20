@@ -38,7 +38,7 @@ ignored as inline-blocks are placed next to each other.
 ```
 
 ```javascript
-import splitText from '@joinbox/splittext';
+import splitText from '@helga-agency/splittext';
 const restore = splitText({
     element: document.querySelector('div'),
     // Pass a custom wrapper function

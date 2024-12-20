@@ -8,7 +8,7 @@
 
 ````html
     <script type="module">
-        import @joinbox/vimeoplayer;
+        import @helga-agency/vimeoplayer;
     </script>
     <vimeo-player data-video-id="558118399">
         <img src="https://picsum.photos/640/360" class="previewImage">

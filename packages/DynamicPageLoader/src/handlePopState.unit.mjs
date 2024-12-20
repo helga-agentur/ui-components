@@ -5,7 +5,7 @@ import getDOM from '../../../src/testHelpers/getDOM.mjs';
 
 const setup = async(hideErrors) => {
     const basePath = dirname(fileURLToPath(new URL(import.meta.url)));
-    const jsdomOptions = { url: 'https://joinbox.com' };
+    const jsdomOptions = { url: 'https://helga.ch' };
     return getDOM({
         basePath,
         scripts: ['handlePopState.window.js'],
