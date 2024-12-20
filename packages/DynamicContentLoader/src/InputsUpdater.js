@@ -25,7 +25,7 @@ export default class InputsUpdater extends HTMLElement {
             detail: {
                 // There's nothing to do once the response arrives
                 updateResponseStatus: this.#updateResponseStatus.bind(this),
-                assembleURL: this.#assembleURL.bind(this),
+                getRequestConfig: this.#getRequestConfig.bind(this),
             },
         }));
     }
@@ -74,12 +74,14 @@ export default class InputsUpdater extends HTMLElement {
         return endpointUrl;
     }
 
-    #assembleURL({ searchParams, reset }) {
+    #getRequestConfig({ searchParams, reset }) {
         // Reset everything. Only do it if a reset is explicitly requested by the user. Why? We
         // could update the DOM at any time, but but dropdowns would be closed, checkboxes would
         // lose focus etc. Let's try to change as little as necessary to hide the fact that
-        // things are updated from the user.
-        return reset ? `${this.#getEndpoint()}?${searchParams.toString()}` : null;
+        // things are updated from the user. A reset is necessary, though, if all filters are
+        // being reset by the user (by clicking «Reset filters», e.g.); in that case, all values
+        // in the inputs must be cleared.
+        return { url: reset ? `${this.#getEndpoint()}?${searchParams.toString()}` : null };
     }
 
     static defineCustomElement() {

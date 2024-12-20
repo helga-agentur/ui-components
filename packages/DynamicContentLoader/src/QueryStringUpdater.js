@@ -20,7 +20,7 @@ export default class QueryStringUpdater extends HTMLElement {
             bubbles: true,
             detail: {
                 updateResponseStatus: () => {},
-                assembleURL: QueryStringUpdater.#updateResponseStatus,
+                getRequestConfig: QueryStringUpdater.#updateResponseStatus,
             },
         }));
     }
@@ -29,7 +29,7 @@ export default class QueryStringUpdater extends HTMLElement {
         // eslint-disable-next-line no-restricted-globals
         history.pushState(null, '', `?${searchParams.toString()}`);
         // Dont' fetch anything
-        return null;
+        return { url: null };
     }
 
     static defineCustomElement() {

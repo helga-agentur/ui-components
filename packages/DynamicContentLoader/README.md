@@ -7,17 +7,17 @@ when a filter is changed.
 Different components are wrapped in a `dynamic-content-orchestrator` and play together in a
 loosely coupled way. There are two types of components:
 - `Listener`s handle DOM or other events and request an update by dispatching an event.
-- `Updater`s that return the URL from where their content should be fetched and handle the content
+- `Updater`s that return a config from where their content should be fetched and handle the content
 once it arrives.
 
 Basic Flow:
 1. All `Updater`s register themselves at the `DynamicContentOrchestrator` by dispatching an
-`addDynamicContentUpdater` event with `{ updateResponseStatus, assembleURL }`.
+`addDynamicContentUpdater` event with `{ updateResponseStatus, getRequestConfig }`.
 2. Once a user interaction happens, a `Listener` dispatches a `loadDynamicContent` event with 
 `{ requestConfiguration: { searchParams } }`. The `searchParams` correspond to the filters that
 should be applied to the fetched content.
-3. The `DynamicContentOrchestrator` calls `assembleURL` on each `Updater` and collects the
-returned URLs.
+3. The `DynamicContentOrchestrator` calls `getRequestConfig` on each `Updater` and collects the
+returned configuration.
 4. The `DynamicContentOrchestrator` fetches the content from every URL and calls
 `updateResponseStatus` on each `Updater` with the corresponding content.
 
@@ -69,9 +69,9 @@ for specific use cases.
 Serves as a wrapper around all other components below and ensures that they play togehter nicely. 
 
 Handles two events:
-- `addDynamicContentUpdater ({ detail: { assembleURL: function, updateResponseStatus: 
+- `addDynamicContentUpdater ({ detail: { getRequestConfig: function, updateResponseStatus: 
 function } })`. The argument signatures are:
-  - `assembleURL (function({ searchParams: SearchParams }))` will be called when new content 
+  - `getRequestConfig (function({ searchParams: SearchParams }))` will be called when new content 
     should be fetched. Must return a string or `null` if nothing should be fetched.
   - `updateResponseStatus (function({ status: string, content: string }))` will be called when the
     orchestrator receives new content. 

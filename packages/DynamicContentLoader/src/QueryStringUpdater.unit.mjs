@@ -17,7 +17,7 @@ test('emits loadDynamicContent', async (t) => {
     await new Promise((resolve) => { setTimeout(resolve); });
     const pushStateArguments = [];
     window.history.pushState = (...state) => { pushStateArguments.push(state); }; 
-    events[0].detail.assembleURL({ searchParams: new URLSearchParams('q=5') });
+    events[0].detail.getRequestConfig({ searchParams: new URLSearchParams('q=5') });
     t.is(pushStateArguments.length, 1);
     t.deepEqual(pushStateArguments[0], [null, '', '?q=5']);
     t.is(errors.length, 0);

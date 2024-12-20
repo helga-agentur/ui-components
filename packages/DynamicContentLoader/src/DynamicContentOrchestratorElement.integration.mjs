@@ -48,7 +48,7 @@ test('coordinates listeners and updaters', async (t) => {
     const responses = [];
     // Create and register an updater
     const updater = {
-        assembleURL: () => 'test1',
+        getRequestConfig: () => ({ url: 'test1', data: 'test' }),
         updateResponseStatus: (response) => responses.push(response),
     };
     child.dispatchEvent(
@@ -57,16 +57,23 @@ test('coordinates listeners and updaters', async (t) => {
 
     // Load content
     child.dispatchEvent(new window.CustomEvent('loadDynamicContent', {
-        detail: { requestConfiguration: { queryString: new window.URLSearchParams('q=5') } },
+        detail: {
+            requestConfiguration: {
+                searchParams: new window.URLSearchParams('q=5'),
+            },
+        },
         bubbles: true,
     }));
 
     await new Promise((resolve) => setTimeout(resolve));
 
+    // Should be called with 'loading' and 'loaded' should be called
     t.is(responses.length, 2);
-    t.deepEqual(responses[0], { status: 'loading', url: 'test1' });
+    t.deepEqual(responses[0], { status: 'loading', url: 'test1', 'data': 'test' });
+    // Test separately because response is complex
     t.is(responses[1].content, 'sAllGood');
     t.is(responses[1].status, 'loaded');
+    t.is(responses[1].data, 'test');
     t.is(responses[1].response.ok, true);
     t.is(errors.length, 0);
 });

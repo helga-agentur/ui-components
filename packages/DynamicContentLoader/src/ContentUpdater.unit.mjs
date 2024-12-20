@@ -18,41 +18,47 @@ test('emits addDynamicContentUpdater with correct arguments', async (t) => {
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
     t.is(addEventsFired.length, 1);
-    // We expect { detail: { assembleURL: function, updateResponseStatus: function } }
+    // We expect { detail: { getRequestConfig: function, updateResponseStatus: function } }
     t.is(typeof addEventsFired[0].detail.updateResponseStatus, 'function');
-    t.is(typeof addEventsFired[0].detail.assembleURL, 'function');
+    t.is(typeof addEventsFired[0].detail.getRequestConfig, 'function');
     t.is(errors.length, 0);
 });
 
 test('assembles correct URL', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
-    // We can only access assembleURL by listening to addDynamicContentUpdater
+    // We can only access getRequestConfig by listening to addDynamicContentUpdater
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
     const updater = document.createElement('content-updater');
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
-    const { assembleURL } = addEventsFired[0].detail;
+    const { getRequestConfig } = addEventsFired[0].detail;
     // URL is missing
     t.throws(
-        () => assembleURL({ searchParams: new URLSearchParams('q=5') }),
+        () => getRequestConfig({ searchParams: new URLSearchParams('q=5') }),
         { message: /value undefined is not permitted/ },
     );
     // URL is set
     updater.setAttribute('data-endpoint-url', '/test');
-    t.is(assembleURL({ searchParams: new URLSearchParams('q=5') }), '/test?q=5');
+    t.deepEqual(
+        getRequestConfig({ searchParams: new URLSearchParams('q=5') }),
+        { url: '/test?q=5' },
+    );
     // URL is empty
     updater.setAttribute('data-endpoint-url', '');
-    t.is(assembleURL({ searchParams: new URLSearchParams('q=5') }), '?q=5');
+    t.deepEqual(
+        getRequestConfig({ searchParams: new URLSearchParams('q=5') }), 
+        { url: '?q=5' },
+    ); 
     t.is(errors.length, 0);
 });
 
 test('updates content', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
-    // We can only access assembleURL by listening to addDynamicContentUpdater
+    // We can only access getRequestConfig by listening to addDynamicContentUpdater
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
