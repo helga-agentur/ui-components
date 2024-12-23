@@ -57,7 +57,11 @@ export default class ContentUpdater extends HTMLElement {
             if (!elements[key]) {
                 throw (new Error(`Make sure that the ContentUpdater has three children with the following data attributes: data-loading, data-error and data-content; missing element to display status "${status}".`));
             }
-            elements[key].hidden = (key !== status);
+            // Hide all elements that don't match the current status, *except* if the status is
+            // loading and the action is 'paginateAppend': In that case, the loading indicator
+            // should be displayed below the regular content.
+            const forceShow = status === 'loading' && data?.action === 'paginateAppend';
+            elements[key].hidden = (key !== status && !forceShow);
         });
         const activeElement = elements[status];
         // Only append content if the user paginates accordingly *and* it's the main content block.
@@ -66,7 +70,7 @@ export default class ContentUpdater extends HTMLElement {
         const appendContent = status === 'loaded' && appendContentOnLoad;
         const replaceContent = (status === 'failed') || (status === 'loaded' && !appendContent);
         if (replaceContent) activeElement.innerHTML = content;
-        else if (appendContent) activeElement.innerHTML += content;
+        else if (appendContent) activeElement.insertAdjacentHTML('beforeend', content);
         // Make sure the active element is visible but *only* if it's the main content (we don't
         // want to scroll to the pagination *and* the main content at the same time).
         // Only scroll if a user paginated and new page is not appended, but replaced. Don't scroll
