@@ -71,6 +71,12 @@ export default class ContentUpdater extends HTMLElement {
         const replaceContent = (status === 'failed') || (status === 'loaded' && !appendContent);
         if (replaceContent) activeElement.innerHTML = content;
         else if (appendContent) activeElement.insertAdjacentHTML('beforeend', content);
+        this.dispatchEvent(new CustomEvent('contentUpdate', {
+            bubbles: true,
+            detail: {
+                status,
+            },
+        }));
         // Make sure the active element is visible but *only* if it's the main content (we don't
         // want to scroll to the pagination *and* the main content at the same time).
         // Only scroll if a user paginated and new page is not appended, but replaced. Don't scroll
@@ -78,7 +84,7 @@ export default class ContentUpdater extends HTMLElement {
         if (this.#isMainContent() && data?.action === 'paginateReplace') {
             // Use `scrollTop` instead of `scrollIntoView` because `scrollIntoView` only makes sure
             // that the element is visible, but not that it's at the top of the viewport. If the
-            // pagination is below the the main content and a user changes the page, 
+            // pagination is below the the main content and a user changes the page,
             // `scrollIntoView` might not scroll at all if the main content is visible; in that
             // case, we want to scroll the the main content's top, though.
             const scrollTop = window.scrollY + activeElement.getBoundingClientRect().top;

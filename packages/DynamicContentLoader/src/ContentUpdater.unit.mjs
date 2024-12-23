@@ -8,6 +8,14 @@ const setup = async (hideErrors) => {
     return getDOM({ basePath, scripts: ['ContentUpdaterElement.js'], hideErrors });
 };
 
+const createChildren = () => (
+    `
+        <div data-loading hidden>Loading</div>
+        <div data-error hidden>Error</div>
+        <div data-content>Content</div>
+    `
+);
+
 test('emits addDynamicContentUpdater with correct arguments', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
@@ -76,15 +84,9 @@ test('updates content', async (t) => {
         () => updateResponseStatus({ status: 'loading' }),
         { message: /missing element to display status "loading"/ },
     );
-    // Add children
-    const children = `
-        <div data-loading hidden>Loading</div>
-        <div data-error hidden>Error</div>
-        <div data-content>Content</div>
-    `;
     // JSDOM does not provide a scrollTo method
     window.scrollTo = () => {};
-    updater.innerHTML = children;
+    updater.innerHTML = createChildren();
     const loading = updater.querySelector('[data-loading]');
     const error = updater.querySelector('[data-error]');
     const content = updater.querySelector('[data-content]');
@@ -121,12 +123,7 @@ test('appends content if requested', async (t) => {
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
     window.scrollTo = () => {};
-    const children = `
-        <div data-loading hidden>Loading</div>
-        <div data-error hidden>Error</div>
-        <div data-content>Content</div>
-    `;
-    updater.innerHTML = children;
+    updater.innerHTML = createChildren();
     const { updateResponseStatus } = addEventsFired[0].detail;
     updateResponseStatus({ status: 'loaded', data: { action: 'paginateAppend' }, content: 'test' });
     t.is(updater.querySelector('[data-content]').innerHTML, 'Contenttest');
@@ -143,14 +140,9 @@ test('scrolls if appropriate', async (t) => {
     updater.setAttribute('data-is-main-content', '');
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
-    let scrolledArgs = [];
+    const scrolledArgs = [];
     window.scrollTo = (...args) => { scrolledArgs.push(args); };
-    const children = `
-        <div data-loading hidden>Loading</div>
-        <div data-error hidden>Error</div>
-        <div data-content>Content</div>
-    `;
-    updater.innerHTML = children;
+    updater.innerHTML = createChildren();
     const { updateResponseStatus } = addEventsFired[0].detail;
     updateResponseStatus({
         status: 'loaded',
@@ -158,5 +150,28 @@ test('scrolls if appropriate', async (t) => {
         data: { action: 'paginateReplace' },
     });
     t.is(scrolledArgs.length, 1);
+    t.is(errors.length, 0);
+});
+
+test('dispatches contentUpdate events', async (t) => {
+    const addEventsFired = [];
+    const updateEventsFired = [];
+    const { document, errors, window } = await setup(true);
+    window.addEventListener('addDynamicContentUpdater', (ev) => {
+        addEventsFired.push(ev);
+    });
+    const updater = document.createElement('content-updater');
+    updater.addEventListener('contentUpdate', (ev) => {
+        updateEventsFired.push(ev);
+    });
+    document.body.appendChild(updater);
+    await new Promise((resolve) => { setTimeout(resolve); });
+    updater.innerHTML = createChildren();
+    const { updateResponseStatus } = addEventsFired[0].detail;
+    updateResponseStatus({ status: 'loading', data: { action: 'paginateAppend' }, content: 'loading' });
+    updateResponseStatus({ status: 'loaded', data: { action: 'paginateAppend' }, content: 'test' });
+    t.is(updateEventsFired.length, 2);
+    t.is(updateEventsFired[0].detail.status, 'loading');
+    t.is(updateEventsFired[1].detail.status, 'loaded');
     t.is(errors.length, 0);
 });
