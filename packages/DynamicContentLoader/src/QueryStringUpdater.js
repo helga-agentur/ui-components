@@ -38,8 +38,10 @@ export default class QueryStringUpdater extends HTMLElement {
         ignoredParameters.forEach((ignoredParameter) => {
             clonedParameters.delete(ignoredParameter);
         });
+        // Make sure that we don't use ? if the query is empty
+        const query = clonedParameters.size ? `?${clonedParameters.toString()}` : '';
         // eslint-disable-next-line no-restricted-globals
-        history.pushState(null, '', `?${clonedParameters.toString()}`);
+        history.pushState(null, '', query);
         // Dont' fetch anything
         return { url: null };
     }

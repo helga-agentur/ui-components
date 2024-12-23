@@ -38,3 +38,18 @@ test('ignores ignored parameters', async (t) => {
     t.deepEqual(pushStateArguments[0], [null, '', '?b=7']);
     t.is(errors.length, 0);
 });
+
+test('does not append an empty ?-query', async (t) => {
+    const { document, errors, window } = await setup(true);
+    const events = [];
+    window.addEventListener('addDynamicContentUpdater', (ev) => { events.push(ev); });
+    const queryStringUpdater = document.createElement('query-string-updater');
+    document.body.appendChild(queryStringUpdater);
+    await new Promise((resolve) => { setTimeout(resolve); });
+    const pushStateArguments = [];
+    window.history.pushState = (...state) => { pushStateArguments.push(state); };
+    events[0].detail.getRequestConfig({ searchParams: new URLSearchParams() });
+    t.is(pushStateArguments.length, 1);
+    t.deepEqual(pushStateArguments[0], [null, '', '']);
+    t.is(errors.length, 0);
+});
