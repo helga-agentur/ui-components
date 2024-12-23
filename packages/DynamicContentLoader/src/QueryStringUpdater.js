@@ -1,7 +1,10 @@
-/* global HTMLElement, customElements, CustomEvent, history */
+/* global HTMLElement, customElements, history */
 
 /**
  * Updates the current location's query parameters to match the current filters.
+ * Allows to ignore certain parameters that may be requested but should not be pushed to the URL.
+ * @attribute data-ignore-parameters - Comma-separated list of parameters to *not* forward to the
+ * current page's URL.
  */
 export default class QueryStringUpdater extends HTMLElement {
     connectedCallback() {
@@ -20,14 +23,23 @@ export default class QueryStringUpdater extends HTMLElement {
             bubbles: true,
             detail: {
                 updateResponseStatus: () => {},
-                getRequestConfig: QueryStringUpdater.#updateResponseStatus,
+                getRequestConfig: this.#updateResponseStatus.bind(this),
             },
         }));
     }
 
-    static #updateResponseStatus({ searchParams }) {
+    #getSearchParamsToIgnore() {
+        return this.dataset.ignoreParameters?.split(/\s*,\s*/) || [];
+    }
+
+    #updateResponseStatus({ searchParams }) {
+        const clonedParameters = new URLSearchParams(searchParams);
+        const ignoredParameters = this.#getSearchParamsToIgnore();
+        ignoredParameters.forEach((ignoredParameter) => {
+            clonedParameters.delete(ignoredParameter);
+        });
         // eslint-disable-next-line no-restricted-globals
-        history.pushState(null, '', `?${searchParams.toString()}`);
+        history.pushState(null, '', `?${clonedParameters.toString()}`);
         // Dont' fetch anything
         return { url: null };
     }
