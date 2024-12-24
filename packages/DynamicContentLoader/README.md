@@ -14,8 +14,11 @@ Basic Flow:
 1. All `Updater`s register themselves at the `DynamicContentOrchestrator` by dispatching an
 `addDynamicContentUpdater` event with `{ updateResponseStatus, getRequestConfig }`.
 2. Once a user interaction happens, a `Listener` dispatches a `loadDynamicContent` event with 
-`{ requestConfiguration: { searchParams } }`. The `searchParams` correspond to the filters that
-should be applied to the fetched content.
+`{ requestConfiguration: { searchParams, action?, reset? } }`. The `searchParams` correspond to 
+the filters that should be applied to the fetched content; `reset` is a boolean that indicates
+if everything should be reset (e.g. when user clicks "Reset filters"); `action` is either
+`'paginateAppend'` or `'paginateReplace'` and indicates if the main content should be appended
+or replaced.
 3. The `DynamicContentOrchestrator` calls `getRequestConfig` on each `Updater` and collects the
 returned configuration.
 4. The `DynamicContentOrchestrator` fetches the content from every URL and calls
