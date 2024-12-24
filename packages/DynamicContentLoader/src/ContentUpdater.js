@@ -59,8 +59,11 @@ export default class ContentUpdater extends HTMLElement {
             }
             // Hide all elements that don't match the current status, *except* if the status is
             // loading and the action is 'paginateAppend': In that case, the loading indicator
-            // should be displayed below the regular content.
-            const forceShow = status === 'loading' && data?.action === 'paginateAppend';
+            // should be displayed below the regular content (but error should be invisible).
+            const forceShow = status === 'loading'
+                && data?.action === 'paginateAppend'
+                // Force visibility of *content* element, not the others
+                && key === 'loaded';
             elements[key].hidden = (key !== status && !forceShow);
         });
         const activeElement = elements[status];

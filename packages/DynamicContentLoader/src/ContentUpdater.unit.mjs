@@ -125,6 +125,11 @@ test('appends content if requested', async (t) => {
     window.scrollTo = () => {};
     updater.innerHTML = createChildren();
     const { updateResponseStatus } = addEventsFired[0].detail;
+    // Check if loading indicator and content are visible during loading
+    updateResponseStatus({ status: 'loading', data: { action: 'paginateAppend' } });
+    t.is(updater.querySelector('[data-content]').hasAttribute('hidden'), false);
+    t.is(updater.querySelector('[data-loading]').hasAttribute('hidden'), false);
+    t.is(updater.querySelector('[data-error]').hasAttribute('hidden'), true);
     updateResponseStatus({ status: 'loaded', data: { action: 'paginateAppend' }, content: 'test' });
     t.is(updater.querySelector('[data-content]').innerHTML, 'Contenttest');
     t.is(errors.length, 0);
