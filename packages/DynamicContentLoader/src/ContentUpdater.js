@@ -63,7 +63,8 @@ export default class ContentUpdater extends HTMLElement {
             const forceShow = status === 'loading'
                 && data?.action === 'paginateAppend'
                 // Force visibility of *content* element, not the others
-                && key === 'loaded';
+                && key === 'loaded'
+                && this.#isMainContent();
             elements[key].hidden = (key !== status && !forceShow);
         });
         const activeElement = elements[status];
