@@ -98,7 +98,7 @@ fetched; a query string may be automatically attached if it is requested by a li
 (e.g. to paginate or filter the view).
 - `data-is-main-content` (`boolean`, optional): If set, content will be appended (instead of
 replaced) when `link-listener` uses the `data-append` attribute. If set, the browser will scroll
-to the top of the element *if* action is `paginageReplace` (see `<link-listener>`);
+to the top of this element *if* action is `paginateReplace` (see `<link-listener>`);
 
 #### Content
 The following elements **must** be provided within `<aync-loader>`:
