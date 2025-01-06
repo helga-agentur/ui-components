@@ -10,11 +10,12 @@ Run `npm i` in the root directory. It will install all dependencies for all work
 
 ### Release
 1. Run `npm run test -ws` in the **root directory** to run all tests in all packages
-1. Run `npm run build -ws --if-present` to run build scripts in all packages where one exits
+1. Run `npm run build -ws --if-present` to run build scripts in all packages where one exits; it
+    might be missing for packages that directly export ESM modules.
 1. Commit and push the generated files
 1. Checkout main and merge feature branch
-1. Run `npm version <patch|major|minor> -w <packageName>` to create a new version for a specific package
-   or `-ws` for all packages.
+1. Run `npm version <patch|major|minor> -w <packageName>` to create a new version for a specific
+   package or `-ws` for all packages.
 1. Commit `package.json` files with new version.
 1. Create tag for packages that will change their version: `@helga-agency/<packageName>@<version>`
 1. Run `npm publish -w <packageName>` to publish a specific package or `-ws` for all packages.
