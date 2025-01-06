@@ -33,13 +33,14 @@ export default class QueryStringUpdater extends HTMLElement {
     }
 
     #updateResponseStatus({ searchParams }) {
-        const clonedParameters = new URLSearchParams(searchParams);
+        // Clone parameters, then remove the ignored ones
+        const cleanedParameters = new URLSearchParams(searchParams);
         const ignoredParameters = this.#getSearchParamsToIgnore();
         ignoredParameters.forEach((ignoredParameter) => {
-            clonedParameters.delete(ignoredParameter);
+            cleanedParameters.delete(ignoredParameter);
         });
         // Make sure that we don't use ? if the query is empty
-        const query = clonedParameters.size ? `?${clonedParameters.toString()}` : '';
+        const query = cleanedParameters.size ? `?${cleanedParameters.toString()}` : '';
         // eslint-disable-next-line no-restricted-globals
         history.pushState(null, '', query);
         // Dont' fetch anything

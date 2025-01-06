@@ -1,4 +1,4 @@
-/* global HTMLElement, customElements, CustomEvent, window */
+/* global HTMLElement, customElements, window */
 
 /**
  * Generic implementation that updates content of the element when dynamic content is loaded. Used
@@ -27,7 +27,12 @@ export default class ContentUpdater extends HTMLElement {
         }));
     }
 
-    #updateResponseStatus({ status, content, response, data }) {
+    #updateResponseStatus({
+        status,
+        content,
+        response,
+        data,
+    }) {
         if (!['loading', 'loaded', 'failed'].includes(status)) {
             throw new Error(`Expected statusUpdate.status to be one of 'loading', 'loaded' or 'failed', got ${status} instead.`);
         }
@@ -47,6 +52,7 @@ export default class ContentUpdater extends HTMLElement {
      * @param {string?} content - HTML content to set; empty when status is 'loading'
      */
     #updateDOM(status, content, data) {
+        // Object keys must match status; we use it to select the corresponding HTML element
         const elements = {
             loading: this.querySelector('[data-loading]'),
             failed: this.querySelector('[data-error]'),
@@ -68,13 +74,26 @@ export default class ContentUpdater extends HTMLElement {
             elements[key].hidden = (key !== status && !forceShow);
         });
         const activeElement = elements[status];
-        // Only append content if the user paginates accordingly *and* it's the main content block.
-        // In all other cases, replace the content – except when the status is 'loading'.
-        const appendContentOnLoad = (data?.action === 'paginateAppend' && this.#isMainContent());
-        const appendContent = status === 'loaded' && appendContentOnLoad;
-        const replaceContent = (status === 'failed') || (status === 'loaded' && !appendContent);
-        if (replaceContent) activeElement.innerHTML = content;
-        else if (appendContent) activeElement.insertAdjacentHTML('beforeend', content);
+        // When the status is 'loading', do not append or replace anything: The loading indicator
+        // does not provide space for any additional content.
+        // When the status is 'failed', replace the content: The server's answer will be displayed
+        // in the error element.
+        // If the status is 'loading':
+        // - Append content if data.action is 'paginateAppend' (if e.g LinkListener was used with
+        //   the corresponding attribute) *and* if it's the main content block.
+        // - Replace the content in all other cases.
+        const actionIsAppend = data?.action === 'paginateAppend';
+        const isMainContent = this.#isMainContent();
+
+        let action;
+        if (status === 'failed') action = 'replace';
+        else if (status === 'loaded') {
+            if (actionIsAppend && isMainContent) action = 'append';
+            else action = 'replace';
+        }
+
+        if (action === 'replace') activeElement.innerHTML = content;
+        else if (action === 'append') activeElement.insertAdjacentHTML('beforeend', content);
         this.dispatchEvent(new CustomEvent('contentUpdate', {
             bubbles: true,
             detail: {
