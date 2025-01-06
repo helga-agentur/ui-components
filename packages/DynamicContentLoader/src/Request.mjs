@@ -8,9 +8,19 @@
  * - failed: { status: 'failed', response: Response, content: String }
  */
 export default class {
-    #handlers = [];
+    #updaters = [];
     #signal;
     #url;
+
+    /**
+     * An updater can return data when getRequestConfig is called. This data will be temporarily
+     * stored and passed to the updater once updateResponseStatus is called. This allows us to
+     * persist data across a request response cycle, e.g. to *append* data (instead of replace it)
+     * when a user paginates (and does not filter, where data should be replaced).
+     * @type {Map<object, any>} - key is the updater's function that handles the data, value is
+     * the data it returns when getRequestConfig is called.
+     */
+    #data = new Map();
 
     /**
      * @param {*} params
@@ -37,36 +47,41 @@ export default class {
     }
 
     /**
-     * Adds a handler that will be called with updates for the request.
-     * @param {function} handler
+     * Adds a updater that will be called with updates for the request.
+     * @param {function} updater
+     * @param {any} data - Data that was returned by an updater and will be passed to it when
+     * data is distributed.
      */
-    addUpdater(handler) {
-        if (typeof handler !== 'function') {
-            throw new Error(`Parameter handler must be a function, is ${handler} instead.`);
+    addUpdater(updater, data) {
+        if (typeof updater !== 'function') {
+            throw new Error(`Parameter updater must be a function, is ${updater} instead.`);
         }
-        this.#handlers.push(handler);
+        this.#updaters.push(updater);
+        this.#data.set(updater, data);
     }
 
     /**
-     * Calls all handlers with the data provided.
+     * Calls all updaters with the data provided.
      * @param {*} data
      */
-    #callAllHandlers(data) {
-        this.#handlers.forEach((handler) => handler(data));
+    #callAllUpdaters(data) {
+        this.#updaters.forEach((updater) => {
+            updater({ ...data, data: this.#data.get(updater) });
+        });
     }
 
     /**
-     * Fetches the url provided and calls all handlers with updates once they arrive.
+     * Fetches the url provided and calls all updaters with updates once they arrive.
      */
     async fetch() {
-        this.#callAllHandlers({ status: 'loading', url: this.#url });
+        this.#callAllUpdaters({ status: 'loading', url: this.#url });
         const response = await fetch(this.#url, { signal: this.#signal });
         const content = await response.text();
-        const handlerData = {
+        const updaterData = {
             response,
             content,
             status: response.ok ? 'loaded' : 'failed',
         };
-        this.#callAllHandlers(handlerData);
+        this.#callAllUpdaters(updaterData);
     }
 }

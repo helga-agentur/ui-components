@@ -8,6 +8,14 @@ const setup = async (hideErrors) => {
     return getDOM({ basePath, scripts: ['ContentUpdaterElement.js'], hideErrors });
 };
 
+const createChildren = () => (
+    `
+        <div data-loading hidden>Loading</div>
+        <div data-error hidden>Error</div>
+        <div data-content>Content</div>
+    `
+);
+
 test('emits addDynamicContentUpdater with correct arguments', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
@@ -18,41 +26,47 @@ test('emits addDynamicContentUpdater with correct arguments', async (t) => {
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
     t.is(addEventsFired.length, 1);
-    // We expect { detail: { assembleURL: function, updateResponseStatus: function } }
+    // We expect { detail: { getRequestConfig: function, updateResponseStatus: function } }
     t.is(typeof addEventsFired[0].detail.updateResponseStatus, 'function');
-    t.is(typeof addEventsFired[0].detail.assembleURL, 'function');
+    t.is(typeof addEventsFired[0].detail.getRequestConfig, 'function');
     t.is(errors.length, 0);
 });
 
 test('assembles correct URL', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
-    // We can only access assembleURL by listening to addDynamicContentUpdater
+    // We can only access getRequestConfig by listening to addDynamicContentUpdater
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
     const updater = document.createElement('content-updater');
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
-    const { assembleURL } = addEventsFired[0].detail;
+    const { getRequestConfig } = addEventsFired[0].detail;
     // URL is missing
     t.throws(
-        () => assembleURL({ searchParams: new URLSearchParams('q=5') }),
+        () => getRequestConfig({ searchParams: new URLSearchParams('q=5') }),
         { message: /value undefined is not permitted/ },
     );
     // URL is set
     updater.setAttribute('data-endpoint-url', '/test');
-    t.is(assembleURL({ searchParams: new URLSearchParams('q=5') }), '/test?q=5');
+    t.deepEqual(
+        getRequestConfig({ searchParams: new URLSearchParams('q=5') }),
+        { url: '/test?q=5', data: { action: undefined } },
+    );
     // URL is empty
     updater.setAttribute('data-endpoint-url', '');
-    t.is(assembleURL({ searchParams: new URLSearchParams('q=5') }), '?q=5');
+    t.deepEqual(
+        getRequestConfig({ searchParams: new URLSearchParams('q=5'), action: 'paginateAppend' }), 
+        { url: '?q=5', data: { action: 'paginateAppend' } },
+    ); 
     t.is(errors.length, 0);
 });
 
 test('updates content', async (t) => {
     const { document, errors, window } = await setup(true);
     const addEventsFired = [];
-    // We can only access assembleURL by listening to addDynamicContentUpdater
+    // We can only access getRequestConfig by listening to addDynamicContentUpdater
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
@@ -70,15 +84,9 @@ test('updates content', async (t) => {
         () => updateResponseStatus({ status: 'loading' }),
         { message: /missing element to display status "loading"/ },
     );
-    // Add children
-    const children = `
-        <div data-loading hidden>Loading</div>
-        <div data-error hidden>Error</div>
-        <div data-content>Content</div>
-    `;
     // JSDOM does not provide a scrollTo method
     window.scrollTo = () => {};
-    updater.innerHTML = children;
+    updater.innerHTML = createChildren();
     const loading = updater.querySelector('[data-loading]');
     const error = updater.querySelector('[data-error]');
     const content = updater.querySelector('[data-content]');
@@ -101,5 +109,74 @@ test('updates content', async (t) => {
     t.is(error.innerHTML, 'ERROR: Status 404 – test');
     // Finally …
     t.is(loading.innerHTML, 'Loading');
+    t.is(errors.length, 0);
+});
+
+test('appends content if requested', async (t) => {
+    const addEventsFired = [];
+    const { document, errors, window } = await setup(true);
+    window.addEventListener('addDynamicContentUpdater', (ev) => {
+        addEventsFired.push(ev);
+    });
+    const updater = document.createElement('content-updater');
+    updater.setAttribute('data-is-main-content', '');
+    document.body.appendChild(updater);
+    await new Promise((resolve) => { setTimeout(resolve); });
+    window.scrollTo = () => {};
+    updater.innerHTML = createChildren();
+    const { updateResponseStatus } = addEventsFired[0].detail;
+    // Check if loading indicator and content are visible during loading
+    updateResponseStatus({ status: 'loading', data: { action: 'paginateAppend' } });
+    t.is(updater.querySelector('[data-content]').hasAttribute('hidden'), false);
+    t.is(updater.querySelector('[data-loading]').hasAttribute('hidden'), false);
+    t.is(updater.querySelector('[data-error]').hasAttribute('hidden'), true);
+    updateResponseStatus({ status: 'loaded', data: { action: 'paginateAppend' }, content: 'test' });
+    t.is(updater.querySelector('[data-content]').innerHTML, 'Contenttest');
+    t.is(errors.length, 0);
+});
+
+test('scrolls if appropriate', async (t) => {
+    const addEventsFired = [];
+    const { document, errors, window } = await setup(true);
+    window.addEventListener('addDynamicContentUpdater', (ev) => {
+        addEventsFired.push(ev);
+    });
+    const updater = document.createElement('content-updater');
+    updater.setAttribute('data-is-main-content', '');
+    document.body.appendChild(updater);
+    await new Promise((resolve) => { setTimeout(resolve); });
+    const scrolledArgs = [];
+    window.scrollTo = (...args) => { scrolledArgs.push(args); };
+    updater.innerHTML = createChildren();
+    const { updateResponseStatus } = addEventsFired[0].detail;
+    updateResponseStatus({
+        status: 'loaded',
+        content: 'test',
+        data: { action: 'paginateReplace' },
+    });
+    t.is(scrolledArgs.length, 1);
+    t.is(errors.length, 0);
+});
+
+test('dispatches contentUpdate events', async (t) => {
+    const addEventsFired = [];
+    const updateEventsFired = [];
+    const { document, errors, window } = await setup(true);
+    window.addEventListener('addDynamicContentUpdater', (ev) => {
+        addEventsFired.push(ev);
+    });
+    const updater = document.createElement('content-updater');
+    updater.addEventListener('contentUpdate', (ev) => {
+        updateEventsFired.push(ev);
+    });
+    document.body.appendChild(updater);
+    await new Promise((resolve) => { setTimeout(resolve); });
+    updater.innerHTML = createChildren();
+    const { updateResponseStatus } = addEventsFired[0].detail;
+    updateResponseStatus({ status: 'loading', data: { action: 'paginateAppend' }, content: 'loading' });
+    updateResponseStatus({ status: 'loaded', data: { action: 'paginateAppend' }, content: 'test' });
+    t.is(updateEventsFired.length, 2);
+    t.is(updateEventsFired[0].detail.status, 'loading');
+    t.is(updateEventsFired[1].detail.status, 'loaded');
     t.is(errors.length, 0);
 });

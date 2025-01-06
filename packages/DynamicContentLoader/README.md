@@ -7,17 +7,20 @@ when a filter is changed.
 Different components are wrapped in a `dynamic-content-orchestrator` and play together in a
 loosely coupled way. There are two types of components:
 - `Listener`s handle DOM or other events and request an update by dispatching an event.
-- `Updater`s that return the URL from where their content should be fetched and handle the content
+- `Updater`s that return a config from where their content should be fetched and handle the content
 once it arrives.
 
 Basic Flow:
 1. All `Updater`s register themselves at the `DynamicContentOrchestrator` by dispatching an
-`addDynamicContentUpdater` event with `{ updateResponseStatus, assembleURL }`.
+`addDynamicContentUpdater` event with `{ updateResponseStatus, getRequestConfig }`.
 2. Once a user interaction happens, a `Listener` dispatches a `loadDynamicContent` event with 
-`{ requestConfiguration: { searchParams } }`. The `searchParams` correspond to the filters that
-should be applied to the fetched content.
-3. The `DynamicContentOrchestrator` calls `assembleURL` on each `Updater` and collects the
-returned URLs.
+`{ requestConfiguration: { searchParams, action?, reset? } }`. The `searchParams` correspond to 
+the filters that should be applied to the fetched content; `reset` is a boolean that indicates
+if everything should be reset (e.g. when user clicks "Reset filters"); `action` is either
+`'paginateAppend'` or `'paginateReplace'` and indicates if the main content should be appended
+or replaced.
+3. The `DynamicContentOrchestrator` calls `getRequestConfig` on each `Updater` and collects the
+returned configuration.
 4. The `DynamicContentOrchestrator` fetches the content from every URL and calls
 `updateResponseStatus` on each `Updater` with the corresponding content.
 
@@ -46,16 +49,14 @@ for specific use cases.
         <div data-content>Initial content</div>
     </content-updater>
 
-    <a href="/page?q=5">
-        <link-listener>
-            <!-- This content-updater fetches the new pagination when the page changes-->
-            <content-updater data-endpoint-url="/page">
-                <div data-loading hidden>Loading…</div>
-                <div data-error hidden><!-- Will be populated when needed --></div>
-                <div data-content>Page 3</div>
-            </content-updater>
-        <link-listener>
-    </a>
+    <link-listener data-append>
+        <!-- This content-updater fetches the new pagination when the page changes-->
+        <content-updater data-endpoint-url="/page">
+            <div data-loading hidden>Loading…</div>
+            <div data-error hidden><!-- Will be populated when needed --></div>
+            <div data-content><a href="/page?q=5">Page 5</a></div>
+        </content-updater>
+    <link-listener>
 ```
 
 ## Components
@@ -69,9 +70,9 @@ for specific use cases.
 Serves as a wrapper around all other components below and ensures that they play togehter nicely. 
 
 Handles two events:
-- `addDynamicContentUpdater ({ detail: { assembleURL: function, updateResponseStatus: 
+- `addDynamicContentUpdater ({ detail: { getRequestConfig: function, updateResponseStatus: 
 function } })`. The argument signatures are:
-  - `assembleURL (function({ searchParams: SearchParams }))` will be called when new content 
+  - `getRequestConfig (function({ searchParams: SearchParams }))` will be called when new content 
     should be fetched. Must return a string or `null` if nothing should be fetched.
   - `updateResponseStatus (function({ status: string, content: string }))` will be called when the
     orchestrator receives new content. 
@@ -95,8 +96,9 @@ None
 - `data-endpoint-url` (`string`, attribute is required but value may be empty): URL that should be
 fetched; a query string may be automatically attached if it is requested by a listener
 (e.g. to paginate or filter the view).
-- `data-is-main-content` (`boolean`, optional): If set, the browser will scroll to the top of the
-element when the content changes.
+- `data-is-main-content` (`boolean`, optional): If set, content will be appended (instead of
+replaced) when `link-listener` uses the `data-append` attribute. If set, the browser will scroll
+to the top of the element *if* action is `paginageReplace` (see `<link-listener>`);
 
 #### Content
 The following elements **must** be provided within `<aync-loader>`:
@@ -119,6 +121,8 @@ the error message will be added to this element.
 #### Attributes
 - `data-reset` (`boolean`, optional): If set, clicking the button will emit an event with 
 `reset: true` in the `requestConfiguration` (see `input-updater`).
+- `data-append` (`boolean`, optional): If set, new content will be appended to the main 
+`content-updater` (and not replace it) by setting the `action` to `paginateAppend`.
 
 #### Structure
 Wrap the `link-listener` around any number of links to update the content dynamically when they're

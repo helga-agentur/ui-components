@@ -21,7 +21,7 @@ export default class FacetsUpdater extends HTMLElement {
             bubbles: true,
             detail: {
                 updateResponseStatus: this.#updateResponseStatus.bind(this),
-                assembleURL: this.#assembleURL.bind(this),
+                getRequestConfig: this.#getRequestConfig.bind(this),
             },
         }));
     }
@@ -81,8 +81,8 @@ export default class FacetsUpdater extends HTMLElement {
         return endpointUrl;
     }
 
-    #assembleURL({ searchParams }) {
-        return `${this.#getEndpoint()}?${searchParams.toString()}`;
+    #getRequestConfig({ searchParams }) {
+        return { url: `${this.#getEndpoint()}?${searchParams.toString()}` };
     }
 
     static defineCustomElement() {
