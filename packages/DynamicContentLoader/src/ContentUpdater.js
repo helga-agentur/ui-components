@@ -1,4 +1,4 @@
-/* global HTMLElement, customElements, window */
+/* global HTMLElement, customElements, window, requestAnimationFrame */
 
 /**
  * Generic implementation that updates content of the element when dynamic content is loaded. Used
@@ -27,7 +27,7 @@ export default class ContentUpdater extends HTMLElement {
         }));
     }
 
-    #updateResponseStatus({
+    async #updateResponseStatus({
         status,
         content,
         response,
@@ -39,7 +39,7 @@ export default class ContentUpdater extends HTMLElement {
         let finalContent;
         if (status === 'loaded') finalContent = content;
         else if (status === 'failed') finalContent = `ERROR: Status ${response.status} – ${content}`;
-        this.#updateDOM(status, finalContent, data);
+        await this.#updateDOM(status, finalContent, data);
     }
 
     #isMainContent() {
@@ -51,28 +51,21 @@ export default class ContentUpdater extends HTMLElement {
      * @param {string} status - valid values are 'loading', 'loaded' and 'failed'
      * @param {string?} content - HTML content to set; empty when status is 'loading'
      */
-    #updateDOM(status, content, data) {
+    async #updateDOM(status, content, data) {
         // Object keys must match status; we use it to select the corresponding HTML element
         const elements = {
             loading: this.querySelector('[data-loading]'),
             failed: this.querySelector('[data-error]'),
             loaded: this.querySelector('[data-content]'),
         };
-        // Validate elements and update their visibility
+
+        // Validate children
         Object.keys(elements).forEach((key) => {
             if (!elements[key]) {
                 throw (new Error(`Make sure that the ContentUpdater has three children with the following data attributes: data-loading, data-error and data-content; missing element to display status "${status}".`));
             }
-            // Hide all elements that don't match the current status, *except* if the status is
-            // loading and the action is 'paginateAppend': In that case, the loading indicator
-            // should be displayed below the regular content (but error should be invisible).
-            const forceShow = status === 'loading'
-                && data?.action === 'paginateAppend'
-                // Force visibility of *content* element, not the others
-                && key === 'loaded'
-                && this.#isMainContent();
-            elements[key].hidden = (key !== status && !forceShow);
         });
+
         const activeElement = elements[status];
         // When the status is 'loading', do not append or replace anything: The loading indicator
         // does not provide space for any additional content.
@@ -92,8 +85,42 @@ export default class ContentUpdater extends HTMLElement {
             else action = 'replace';
         }
 
-        if (action === 'replace') activeElement.innerHTML = content;
-        else if (action === 'append') activeElement.insertAdjacentHTML('beforeend', content);
+        // Make a requestAnimationFrame easily awaitable to make sure that all DOM updates have
+        // happened before we continue.
+        const promisifyRAF = (domUpdate) => (
+            new Promise((resolve) => {
+                requestAnimationFrame(() => {
+                    domUpdate();
+                    resolve();
+                });
+            })
+        );
+        const promises = [];
+
+        // Wait for effective DOM update before we continue
+        promises.push(promisifyRAF(() => {
+            if (action === 'replace') activeElement.innerHTML = content;
+            else if (action === 'append') activeElement.insertAdjacentHTML('beforeend', content);
+        }));
+
+        // Update visibility *after* we updated the content; if we do it before that, the
+        // browser may flicker.
+        Object.keys(elements).forEach((key) => {
+            // Hide all elements that don't match the current status, *except* if the status is
+            // loading *and* the action is 'paginateAppend': In that case, the loading indicator
+            // should be displayed below the regular content (but error should be invisible).
+            const forceShow = status === 'loading'
+                && data?.action === 'paginateAppend'
+                // Force visibility of *content* element, not the others
+                && key === 'loaded'
+                && this.#isMainContent();
+            promises.push(promisifyRAF(() => {
+                elements[key].hidden = (key !== status && !forceShow);
+            }));
+        });
+
+        await Promise.all(promises);
+
         this.dispatchEvent(new CustomEvent('contentUpdate', {
             bubbles: true,
             detail: {

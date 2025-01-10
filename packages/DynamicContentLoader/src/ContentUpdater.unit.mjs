@@ -59,7 +59,7 @@ test('assembles correct URL', async (t) => {
     t.deepEqual(
         getRequestConfig({ searchParams: new URLSearchParams('q=5'), action: 'paginateAppend' }), 
         { url: '?q=5', data: { action: 'paginateAppend' } },
-    ); 
+    );
     t.is(errors.length, 0);
 });
 
@@ -70,17 +70,18 @@ test('updates content', async (t) => {
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
+    window.requestAnimationFrame = (cb) => { cb(); };
     const updater = document.createElement('content-updater');
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
     const { updateResponseStatus } = addEventsFired[0].detail;
     // Invalid status
-    t.throws(
+    await t.throwsAsync(
         () => updateResponseStatus({ status: 'test' }),
         { message: /statusUpdate.status to be one of/ },
     );
     // Children missing
-    t.throws(
+    await t.throwsAsync(
         () => updateResponseStatus({ status: 'loading' }),
         { message: /missing element to display status "loading"/ },
     );
@@ -115,6 +116,7 @@ test('updates content', async (t) => {
 test('appends content if requested', async (t) => {
     const addEventsFired = [];
     const { document, errors, window } = await setup(true);
+    window.requestAnimationFrame = (cb) => { cb(); };
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
@@ -135,9 +137,10 @@ test('appends content if requested', async (t) => {
     t.is(errors.length, 0);
 });
 
-test('scrolls if appropriate', async (t) => {
+test('scrolls if requested', async (t) => {
     const addEventsFired = [];
     const { document, errors, window } = await setup(true);
+    window.requestAnimationFrame = (cb) => { cb(); };
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
@@ -154,6 +157,7 @@ test('scrolls if appropriate', async (t) => {
         content: 'test',
         data: { action: 'paginateReplace' },
     });
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(scrolledArgs.length, 1);
     t.is(errors.length, 0);
 });
@@ -162,6 +166,7 @@ test('dispatches contentUpdate events', async (t) => {
     const addEventsFired = [];
     const updateEventsFired = [];
     const { document, errors, window } = await setup(true);
+    window.requestAnimationFrame = (cb) => { cb(); };
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
@@ -169,12 +174,13 @@ test('dispatches contentUpdate events', async (t) => {
     updater.addEventListener('contentUpdate', (ev) => {
         updateEventsFired.push(ev);
     });
+    updater.innerHTML = createChildren();
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
-    updater.innerHTML = createChildren();
     const { updateResponseStatus } = addEventsFired[0].detail;
     updateResponseStatus({ status: 'loading', data: { action: 'paginateAppend' }, content: 'loading' });
     updateResponseStatus({ status: 'loaded', data: { action: 'paginateAppend' }, content: 'test' });
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(updateEventsFired.length, 2);
     t.is(updateEventsFired[0].detail.status, 'loading');
     t.is(updateEventsFired[1].detail.status, 'loaded');
