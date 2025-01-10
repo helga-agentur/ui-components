@@ -93,17 +93,20 @@ test('updates content', async (t) => {
     const content = updater.querySelector('[data-content]');
     // Loading
     updateResponseStatus({ status: 'loading' });
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(loading.hidden, false);
     t.is(error.hidden, true);
     t.is(content.hidden, true);
     // Loaded
     updateResponseStatus({ status: 'loaded', content: 'test' });
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(loading.hidden, true);
     t.is(error.hidden, true);
     t.is(content.hidden, false);
     t.is(content.innerHTML, 'test');
     // Failed
     updateResponseStatus({ status: 'failed', content: 'test', response: { status: 404 } });
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(loading.hidden, true);
     t.is(error.hidden, false);
     t.is(content.hidden, true);
@@ -129,10 +132,12 @@ test('appends content if requested', async (t) => {
     const { updateResponseStatus } = addEventsFired[0].detail;
     // Check if loading indicator and content are visible during loading
     updateResponseStatus({ status: 'loading', data: { action: 'paginateAppend' } });
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(updater.querySelector('[data-content]').hasAttribute('hidden'), false);
     t.is(updater.querySelector('[data-loading]').hasAttribute('hidden'), false);
     t.is(updater.querySelector('[data-error]').hasAttribute('hidden'), true);
     updateResponseStatus({ status: 'loaded', data: { action: 'paginateAppend' }, content: 'test' });
+    await new Promise((resolve) => { setTimeout(resolve); });
     t.is(updater.querySelector('[data-content]').innerHTML, 'Contenttest');
     t.is(errors.length, 0);
 });

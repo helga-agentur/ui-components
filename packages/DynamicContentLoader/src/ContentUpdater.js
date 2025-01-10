@@ -87,25 +87,29 @@ export default class ContentUpdater extends HTMLElement {
 
         // Make a requestAnimationFrame easily awaitable to make sure that all DOM updates have
         // happened before we continue.
-        const promisifyRAF = (domUpdate) => (
+        const promisifyRAF = (domUpdate = () => {}, timeout = -1) => (
             new Promise((resolve) => {
                 requestAnimationFrame(() => {
                     domUpdate();
-                    resolve();
+                    if (timeout === -1) resolve();
+                    else setTimeout(resolve, timeout);
                 });
             })
         );
-        const promises = [];
 
-        // Wait for effective DOM update before we continue
-        promises.push(promisifyRAF(() => {
+        // Wait for effective DOM update before we continue. If we e
+        await promisifyRAF(() => {
             if (action === 'replace') activeElement.innerHTML = content;
             else if (action === 'append') activeElement.insertAdjacentHTML('beforeend', content);
-        }));
+        });
+
+        // If we don't await another RAF here, on Chrome, the visibility of the elements changes
+        // *before* their content is updated, we get some flickering. WTF.
+        await promisifyRAF(() => {}, 50);
 
         // Update visibility *after* we updated the content; if we do it before that, the
         // browser may flicker.
-        Object.keys(elements).forEach((key) => {
+        const promises = Object.keys(elements).map((key) => {
             // Hide all elements that don't match the current status, *except* if the status is
             // loading *and* the action is 'paginateAppend': In that case, the loading indicator
             // should be displayed below the regular content (but error should be invisible).
@@ -114,9 +118,9 @@ export default class ContentUpdater extends HTMLElement {
                 // Force visibility of *content* element, not the others
                 && key === 'loaded'
                 && this.#isMainContent();
-            promises.push(promisifyRAF(() => {
+            return promisifyRAF(() => {
                 elements[key].hidden = (key !== status && !forceShow);
-            }));
+            });
         });
 
         await Promise.all(promises);
