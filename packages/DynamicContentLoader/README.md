@@ -38,7 +38,6 @@ and events of both types.
 Some of those components are provided within this package, others can be developed and integrated
 for specific use cases.
 
-
 ## Example
 
 ```html
