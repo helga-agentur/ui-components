@@ -10,9 +10,9 @@ const setup = async (hideErrors) => {
 
 const createChildren = () => (
     `
-        <div data-loading hidden>Loading</div>
-        <div data-error hidden>Error</div>
-        <div data-content>Content</div>
+        <div data-loading style="display: none;">Loading</div>
+        <div data-error style="display: none;">Error</div>
+        <div data-content style="display: none;">Content</div>
     `
 );
 
@@ -70,7 +70,6 @@ test('updates content', async (t) => {
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
-    window.requestAnimationFrame = (cb) => { cb(); };
     const updater = document.createElement('content-updater');
     document.body.appendChild(updater);
     await new Promise((resolve) => { setTimeout(resolve); });
@@ -94,22 +93,22 @@ test('updates content', async (t) => {
     // Loading
     updateResponseStatus({ status: 'loading' });
     await new Promise((resolve) => { setTimeout(resolve); });
-    t.is(loading.hidden, false);
-    t.is(error.hidden, true);
-    t.is(content.hidden, true);
+    t.is(loading.style.display, '');
+    t.is(error.style.display, 'none');
+    t.is(content.style.display, 'none');
     // Loaded
     updateResponseStatus({ status: 'loaded', content: 'test' });
     await new Promise((resolve) => { setTimeout(resolve); });
-    t.is(loading.hidden, true);
-    t.is(error.hidden, true);
-    t.is(content.hidden, false);
+    t.is(loading.style.display, 'none');
+    t.is(error.style.display, 'none');
+    t.is(content.style.display, '');
     t.is(content.innerHTML, 'test');
     // Failed
     updateResponseStatus({ status: 'failed', content: 'test', response: { status: 404 } });
     await new Promise((resolve) => { setTimeout(resolve); });
-    t.is(loading.hidden, true);
-    t.is(error.hidden, false);
-    t.is(content.hidden, true);
+    t.is(loading.style.display, 'none');
+    t.is(error.style.display, '');
+    t.is(content.style.display, 'none');
     t.is(error.innerHTML, 'ERROR: Status 404 – test');
     // Finally …
     t.is(loading.innerHTML, 'Loading');
@@ -119,7 +118,6 @@ test('updates content', async (t) => {
 test('appends content if requested', async (t) => {
     const addEventsFired = [];
     const { document, errors, window } = await setup(true);
-    window.requestAnimationFrame = (cb) => { cb(); };
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
@@ -133,9 +131,9 @@ test('appends content if requested', async (t) => {
     // Check if loading indicator and content are visible during loading
     updateResponseStatus({ status: 'loading', data: { action: 'paginateAppend' } });
     await new Promise((resolve) => { setTimeout(resolve); });
-    t.is(updater.querySelector('[data-content]').hasAttribute('hidden'), false);
-    t.is(updater.querySelector('[data-loading]').hasAttribute('hidden'), false);
-    t.is(updater.querySelector('[data-error]').hasAttribute('hidden'), true);
+    t.is(updater.querySelector('[data-content]').style.display, '');
+    t.is(updater.querySelector('[data-loading]').style.display, '');
+    t.is(updater.querySelector('[data-error]').style.display, 'none');
     updateResponseStatus({ status: 'loaded', data: { action: 'paginateAppend' }, content: 'test' });
     await new Promise((resolve) => { setTimeout(resolve); });
     t.is(updater.querySelector('[data-content]').innerHTML, 'Contenttest');
@@ -145,7 +143,6 @@ test('appends content if requested', async (t) => {
 test('scrolls if requested', async (t) => {
     const addEventsFired = [];
     const { document, errors, window } = await setup(true);
-    window.requestAnimationFrame = (cb) => { cb(); };
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });
@@ -171,7 +168,6 @@ test('dispatches contentUpdate events', async (t) => {
     const addEventsFired = [];
     const updateEventsFired = [];
     const { document, errors, window } = await setup(true);
-    window.requestAnimationFrame = (cb) => { cb(); };
     window.addEventListener('addDynamicContentUpdater', (ev) => {
         addEventsFired.push(ev);
     });

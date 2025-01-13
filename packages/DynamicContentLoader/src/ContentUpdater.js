@@ -85,31 +85,12 @@ export default class ContentUpdater extends HTMLElement {
             else action = 'replace';
         }
 
-        // Make a requestAnimationFrame easily awaitable to make sure that all DOM updates have
-        // happened before we continue.
-        const promisifyRAF = (domUpdate = () => {}, timeout = -1) => (
-            new Promise((resolve) => {
-                requestAnimationFrame(() => {
-                    domUpdate();
-                    if (timeout === -1) resolve();
-                    else setTimeout(resolve, timeout);
-                });
-            })
-        );
-
-        // Wait for effective DOM update before we continue. If we e
-        await promisifyRAF(() => {
-            if (action === 'replace') activeElement.innerHTML = content;
-            else if (action === 'append') activeElement.insertAdjacentHTML('beforeend', content);
-        });
-
-        // If we don't await another RAF here, on Chrome, the visibility of the elements changes
-        // *before* their content is updated, we get some flickering. WTF.
-        await promisifyRAF(() => {}, 50);
+        if (action === 'replace') activeElement.innerHTML = content;
+        else if (action === 'append') activeElement.insertAdjacentHTML('beforeend', content);
 
         // Update visibility *after* we updated the content; if we do it before that, the
-        // browser may flicker.
-        const promises = Object.keys(elements).map((key) => {
+        // browser may flicker (as we update content in an already visible element).
+        Object.keys(elements).forEach((key) => {
             // Hide all elements that don't match the current status, *except* if the status is
             // loading *and* the action is 'paginateAppend': In that case, the loading indicator
             // should be displayed below the regular content (but error should be invisible).
@@ -118,12 +99,14 @@ export default class ContentUpdater extends HTMLElement {
                 // Force visibility of *content* element, not the others
                 && key === 'loaded'
                 && this.#isMainContent();
-            return promisifyRAF(() => {
-                elements[key].hidden = (key !== status && !forceShow);
-            });
+            const hidden = (key !== status && !forceShow);
+            const element = elements[key];
+            // Set display CSS property directly on the element. Why? We used hidden before, but
+            // CSS may overwrite the display property that's its default style. Super hard to debug
+            // sometimes.
+            if (hidden) element.style.display = 'none';
+            else element.style.removeProperty('display');
         });
-
-        await Promise.all(promises);
 
         this.dispatchEvent(new CustomEvent('contentUpdate', {
             bubbles: true,
@@ -131,6 +114,7 @@ export default class ContentUpdater extends HTMLElement {
                 status,
             },
         }));
+
         // Make sure the active element is visible but *only* if it's the main content (we don't
         // want to scroll to the pagination *and* the main content at the same time).
         // Only scroll if a user paginated and new page is not appended, but replaced. Don't scroll
