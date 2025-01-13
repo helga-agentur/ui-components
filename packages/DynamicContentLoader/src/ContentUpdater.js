@@ -85,26 +85,11 @@ export default class ContentUpdater extends HTMLElement {
             else action = 'replace';
         }
 
-        // Make a requestAnimationFrame easily awaitable to make sure that all DOM updates have
-        // happened before we continue.
-        const promisifyRAF = (domUpdate) => (
-            new Promise((resolve) => {
-                requestAnimationFrame(() => {
-                    domUpdate();
-                    resolve();
-                });
-            })
-        );
-        const promises = [];
-
-        // Wait for effective DOM update before we continue
-        promises.push(promisifyRAF(() => {
-            if (action === 'replace') activeElement.innerHTML = content;
-            else if (action === 'append') activeElement.insertAdjacentHTML('beforeend', content);
-        }));
+        if (action === 'replace') activeElement.innerHTML = content;
+        else if (action === 'append') activeElement.insertAdjacentHTML('beforeend', content);
 
         // Update visibility *after* we updated the content; if we do it before that, the
-        // browser may flicker.
+        // browser may flicker (as we update content in an already visible element).
         Object.keys(elements).forEach((key) => {
             // Hide all elements that don't match the current status, *except* if the status is
             // loading *and* the action is 'paginateAppend': In that case, the loading indicator
@@ -114,12 +99,14 @@ export default class ContentUpdater extends HTMLElement {
                 // Force visibility of *content* element, not the others
                 && key === 'loaded'
                 && this.#isMainContent();
-            promises.push(promisifyRAF(() => {
-                elements[key].hidden = (key !== status && !forceShow);
-            }));
+            const hidden = (key !== status && !forceShow);
+            const element = elements[key];
+            // Set display CSS property directly on the element. Why? We used hidden before, but
+            // CSS may overwrite the display property that's its default style. Super hard to debug
+            // sometimes.
+            if (hidden) element.style.display = 'none';
+            else element.style.removeProperty('display');
         });
-
-        await Promise.all(promises);
 
         this.dispatchEvent(new CustomEvent('contentUpdate', {
             bubbles: true,
@@ -127,6 +114,7 @@ export default class ContentUpdater extends HTMLElement {
                 status,
             },
         }));
+
         // Make sure the active element is visible but *only* if it's the main content (we don't
         // want to scroll to the pagination *and* the main content at the same time).
         // Only scroll if a user paginated and new page is not appended, but replaced. Don't scroll
