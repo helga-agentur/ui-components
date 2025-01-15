@@ -1,4 +1,5 @@
-/* global HTMLElement, customElements, window, requestAnimationFrame */
+/* global HTMLElement, customElements, window */
+import addSearchParamsToURL from './addSearchParamsToURL.mjs';
 
 /**
  * Generic implementation that updates content of the element when dynamic content is loaded. Used
@@ -141,8 +142,12 @@ export default class ContentUpdater extends HTMLElement {
     }
 
     #getRequestConfig({ searchParams, action }) {
+        const endpointURL = this.#getEndpointURL();
         return {
-            url: `${this.#getEndpointURL()}?${searchParams.toString()}`,
+            url: addSearchParamsToURL(
+                new URL(endpointURL, window.location.origin),
+                searchParams,
+            ).toString(),
             // Pass action to the request so that we can handle the data according to the event
             // that initiated the request once we get it.
             data: { action },
