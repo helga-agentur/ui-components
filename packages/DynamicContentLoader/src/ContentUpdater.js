@@ -143,7 +143,6 @@ export default class ContentUpdater extends HTMLElement {
 
     #getRequestConfig({ searchParams, action }) {
         const endpointURL = this.#getEndpointURL();
-        console.log('endpoint is', endpointURL);
         return {
             url: addSearchParamsToURL(
                 new URL(endpointURL, window.location.origin),
