@@ -5,7 +5,13 @@ import getDOM from '../../../src/testHelpers/getDOM.mjs';
 
 const setup = async (hideErrors) => {
     const basePath = dirname(fileURLToPath(new URL(import.meta.url)));
-    return getDOM({ basePath, scripts: ['ContentUpdaterElement.js'], hideErrors });
+    return getDOM({
+        basePath,
+        scripts: ['ContentUpdaterElement.js'],
+        hideErrors,
+        // We need an origin to construct an URL() from a relative path.
+        jsdomOptions: { url: 'https://example.com' },
+    });
 };
 
 const createChildren = () => (
@@ -52,13 +58,13 @@ test('assembles correct URL', async (t) => {
     updater.setAttribute('data-endpoint-url', '/test');
     t.deepEqual(
         getRequestConfig({ searchParams: new URLSearchParams('q=5') }),
-        { url: '/test?q=5', data: { action: undefined } },
+        { url: 'https://example.com/test?q=5', data: { action: undefined } },
     );
     // URL is empty
     updater.setAttribute('data-endpoint-url', '');
     t.deepEqual(
-        getRequestConfig({ searchParams: new URLSearchParams('q=5'), action: 'paginateAppend' }), 
-        { url: '?q=5', data: { action: 'paginateAppend' } },
+        getRequestConfig({ searchParams: new URLSearchParams('q=5'), action: 'paginateAppend' }),
+        { url: 'https://example.com/?q=5', data: { action: 'paginateAppend' } },
     );
     t.is(errors.length, 0);
 });
