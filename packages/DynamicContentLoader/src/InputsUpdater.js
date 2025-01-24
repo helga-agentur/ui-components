@@ -1,4 +1,5 @@
-/* global HTMLElement, customElements, CustomEvent */
+/* global HTMLElement, customElements, window */
+import addSearchParamsToURL from './addSearchParamsToURL.mjs';
 
 /**
  * When the filters are reset, all fragments containing input elements should be reset to their
@@ -64,7 +65,7 @@ export default class InputsUpdater extends HTMLElement {
         wrapper.innerHTML = content;
     }
 
-    #getEndpoint() {
+    #getEndpointURL() {
         // Read at runtime to catch updates if they happen after initialization or after the
         // element was added to the DOM.
         const { endpointUrl } = this.dataset;
@@ -81,7 +82,11 @@ export default class InputsUpdater extends HTMLElement {
         // things are updated from the user. A reset is necessary, though, if all filters are
         // being reset by the user (by clicking «Reset filters», e.g.); in that case, all values
         // in the inputs must be cleared.
-        return { url: reset ? `${this.#getEndpoint()}?${searchParams.toString()}` : null };
+        const fullURL = addSearchParamsToURL(
+            new URL(this.#getEndpointURL(), window.location.origin),
+            searchParams,
+        ).toString();
+        return { url: reset ? fullURL : null };
     }
 
     static defineCustomElement() {
