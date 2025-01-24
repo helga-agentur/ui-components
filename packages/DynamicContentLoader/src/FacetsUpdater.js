@@ -1,4 +1,5 @@
-/* global HTMLElement, customElements, CustomEvent, requestAnimationFrame */
+/* global HTMLElement, customElements, requestAnimationFrame, window */
+import addSearchParamsToURL from './addSearchParamsToURL.mjs';
 
 /**
  * Updates the facet (expected amount of results) on checkboxes provided by Drupal.
@@ -71,7 +72,7 @@ export default class FacetsUpdater extends HTMLElement {
         });
     }
 
-    #getEndpoint() {
+    #getEndpointURL() {
         // Read at runtime to catch updates if they happen after initialization or after the
         // element was added to the DOM.
         const { endpointUrl } = this.dataset;
@@ -82,7 +83,12 @@ export default class FacetsUpdater extends HTMLElement {
     }
 
     #getRequestConfig({ searchParams }) {
-        return { url: `${this.#getEndpoint()}?${searchParams.toString()}` };
+        return {
+            url: addSearchParamsToURL(
+                new URL(this.#getEndpointURL(), window.location.origin),
+                searchParams,
+            ).toString(),
+        };
     }
 
     static defineCustomElement() {
