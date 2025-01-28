@@ -3,6 +3,7 @@
   "version": "1.2.3",
   "description": "Extensible, loosely coupled custom elements that load content asynchronously, e.g. for filtered search results",
   "main": "src/main.js",
+  "types": "DynamicContentLoader.d.ts",
   "scripts": {
     "test": "npx ava --verbose",
     "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
