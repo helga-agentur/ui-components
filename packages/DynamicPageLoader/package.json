@@ -3,6 +3,7 @@
   "version": "0.4.0",
   "description": "Uses XHR/Ajax to create dynamic transitions when a user navigates from one page to another. This allows for seamless transitions between page changes.",
   "main": "src/index.js",
+  "types": "DynamicPageLoader.d.ts",
   "scripts": {
     "test": "npx ava --verbose",
     "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
