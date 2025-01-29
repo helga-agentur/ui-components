@@ -22,15 +22,13 @@ declare module '@helga-agency/ui-tools' {
         callback: () => void,
     ): void;
 
-    interface MeasurementOptions {
-        element: HTMLElement;
-        updateOnIntersection?: boolean;
-    }
-
     interface Dimensions extends Record<string, unknown> {
         update: () => void,
         destroy: () => void,
     }
 
-    export function measureElement(options: MeasurementOptions): Dimensions;
+    export function measureElement(options: {
+        element: HTMLElement;
+        updateOnIntersection?: boolean;
+    }): Dimensions;
 }
