@@ -1,6 +1,6 @@
 {
   "name": "@helga-agency/ui-tools",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Provides repeatedly used tools for frontend and UI JS development",
   "scripts": {
     "test": "npx ava --verbose",
