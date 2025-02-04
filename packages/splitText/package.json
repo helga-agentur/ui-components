@@ -1,6 +1,6 @@
 {
   "name": "@helga-agency/splittext",
-  "version": "1.6.2",
+  "version": "1.7.0",
   "description": "Splits textContent of an HTML element into multiple parts",
   "main": "splitText.js",
   "types": "splitText.d.ts",
@@ -15,6 +15,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@helga-agency/ui-tools":"*"
+    "@helga-agency/ui-tools": "*"
   }
 }
