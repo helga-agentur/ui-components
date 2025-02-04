@@ -47,6 +47,13 @@ element polyfill is needed.
 - If you are using Babel, install [regenerator-runtime](https://www.npmjs.com/package/regenerator-runtime)
 and import it before the elements via `import 'regenerator-runtime/runtime.js';`
 
+## TypeScript type declarations
+There are type declarations for all components that expose something. This is not the case for components 
+that already register custom elements themselves. (You import them with e.g. `import '@helga-agency/overlay/OverlayElement`.)
+
+The type declarations are tested using a `*.d-test.ts` file. With `npm run ts-test`, the test files are compiled 
+by the TypeScript compiler and if the types are not correct, the compiler displays an error.
+
 ## Components
 - [YouTube Player](./packages/YouTubePlayer/README.md)
 - [YouTube Preview Image](./packages/YouTubePreviewImage/README.md)

@@ -7,6 +7,7 @@
     "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
   },
   "main": "main.mjs",
+  "types": "ui-tools.d.ts",
   "author": "Felix Steiner <felix@helga.ch>",
   "license": "ISC",
   "type": "module",
