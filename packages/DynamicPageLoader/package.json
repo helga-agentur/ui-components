@@ -1,6 +1,6 @@
 {
   "name": "@helga-agency/dynamicpageloader",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Uses XHR/Ajax to create dynamic transitions when a user navigates from one page to another. This allows for seamless transitions between page changes.",
   "main": "src/index.js",
   "types": "DynamicPageLoader.d.ts",
