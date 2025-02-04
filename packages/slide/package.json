@@ -1,6 +1,6 @@
 {
   "name": "@helga-agency/slide",
-  "version": "1.2.4",
+  "version": "1.3.0",
   "description": "Sets height in px on an element to allow for smooth CSS transitions",
   "main": "slide.js",
   "types": "slide.d.ts",
