@@ -1,0 +1,21 @@
+{
+  "name": "@helga-agency/faceted-search",
+  "version": "1.0.0",
+  "description": "Web components for client-side faceted filtering and full-text search over server-rendered content.",
+  "main": "FacetedSearchElement.js",
+  "scripts": {
+    "test": "npx ava --verbose",
+    "build": "npx rollup --c rollup.config.mjs",
+    "lint": "npx eslint \"src/**/*.{js,mjs}\" -c ../../node_modules/@joinbox/eslint-config-joinbox/index.js"
+  },
+  "author": "Felix Steiner <felix@helga.ch>",
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@helga-agency/ui-tools": "*",
+    "itemsjs": "^2.1.0",
+    "minisearch": "^7.0.0"
+  }
+}
