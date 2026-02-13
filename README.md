@@ -6,6 +6,14 @@
 - This is a monorepo that uses npm workspaces to publish the components as individual packages
 
 ### Init
+Clone the repository with `--recurse-submodules` to include the `.ai-boilerplate` submodule:
+```bash
+git clone --recurse-submodules <repo-url>
+```
+If already cloned without the flag, initialize the submodule with:
+```bash
+git submodule update --init
+```
 Run `npm i` in the root directory. It will install all dependencies for all workspaces.
 
 ### Release
