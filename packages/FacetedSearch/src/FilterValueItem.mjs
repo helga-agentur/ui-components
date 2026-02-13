@@ -1,0 +1,68 @@
+/**
+ * Represents a single filter value item. Caches DOM references on construction,
+ * binds checkbox listener, and exposes methods for updating count, toggling
+ * empty class, and setting checkbox state.
+ * Not a web component — instantiated by FacetedSearchFilterValues.
+ */
+import { readItemAttribute } from './extractItemData.mjs';
+
+export default class FilterValueItem {
+
+    /** @type {HTMLElement} */
+    #element;
+
+    /** @type {string} */
+    #id;
+
+    /** @type {string} */
+    #value;
+
+    /** @type {HTMLInputElement|null} */
+    #checkbox;
+
+    /** @type {HTMLElement|null} */
+    #countElement;
+
+    /**
+     * @param {HTMLElement} element - The filter value DOM element
+     * @param {object} config
+     * @param {string} config.idSelector - Attribute selector for the item's ID
+     * @param {string} config.valueSelector - Attribute selector for the item's value
+     * @param {string|null} config.amountSelector - Selector for the count element
+     * @param {(detail: { value: string, selected: boolean }) => void} onChange
+     */
+    constructor(element, { idSelector, valueSelector, amountSelector }, onChange) {
+        this.#element = element;
+        this.#id = readItemAttribute(element, idSelector);
+        this.#value = readItemAttribute(element, valueSelector);
+        this.#checkbox = element.querySelector('input[type="checkbox"]');
+        this.#countElement = amountSelector
+            ? element.querySelector(amountSelector)
+            : null;
+
+        if (this.#checkbox) {
+            this.#checkbox.addEventListener('change', () => {
+                onChange({ value: this.#value, selected: this.#checkbox.checked });
+            });
+        }
+    }
+
+    get id() { return this.#id; }
+    get value() { return this.#value; }
+    get element() { return this.#element; }
+
+    /**
+     * Updates the displayed count and toggles the empty-result class.
+     * @param {number} count
+     * @param {string|null} emptyClass - CSS class to apply when count is 0
+     */
+    updateCount(count, emptyClass) {
+        if (this.#countElement) this.#countElement.textContent = String(count);
+        if (emptyClass) this.#element.classList.toggle(emptyClass, count === 0);
+    }
+
+    /** @param {boolean} selected */
+    setChecked(selected) {
+        if (this.#checkbox) this.#checkbox.checked = selected;
+    }
+}
