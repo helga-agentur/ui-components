@@ -47,10 +47,6 @@ export default class FacetedSearch extends HTMLElement {
         this.#listenForRegistration('facetedSearchRegisterFilterValues', this.#registerFilterValues);
         this.#listenForRegistration('facetedSearchRegisterResultReader', this.#registerReader);
         this.#listenForRegistration('facetedSearchRegisterResultUpdater', this.#registerUpdater);
-        this.#listenForRegistration('facetedSearchUnregisterSearchInput', this.#unregisterSearchInput);
-        this.#listenForRegistration('facetedSearchUnregisterFilterValues', this.#unregisterFilterValues);
-        this.#listenForRegistration('facetedSearchUnregisterResultReader', this.#unregisterReader);
-        this.#listenForRegistration('facetedSearchUnregisterResultUpdater', this.#unregisterUpdater);
 
         this.addEventListener('facetedSearchTermChange', (ev) => {
             this.#handleSearchTermChange(ev.detail.term);
@@ -62,13 +58,32 @@ export default class FacetedSearch extends HTMLElement {
     }
 
     /**
-     * Registers a listener for a child registration/unregistration event,
+     * Registers a listener for a child registration event,
      * extracting the component reference from `detail.element`.
      * @param {string} eventName
      * @param {Function} handler
      */
     #listenForRegistration(eventName, handler) {
         this.addEventListener(eventName, (ev) => {
+            handler.call(this, ev.detail?.element);
+        });
+    }
+
+    /**
+     * Listens for an unregister event directly on the child element.
+     * This avoids relying on event bubbling, which fails in
+     * disconnectedCallback because the element is already detached.
+     * Falls back to a bubbling listener on this orchestrator when
+     * the component is not a real DOM element (e.g. in unit tests).
+     * @param {HTMLElement} component
+     * @param {string} eventName
+     * @param {Function} handler
+     */
+    #listenForUnregister(component, eventName, handler) {
+        const target = typeof component.addEventListener === 'function'
+            ? component
+            : this;
+        target.addEventListener(eventName, (ev) => {
             handler.call(this, ev.detail?.element);
         });
     }
@@ -80,6 +95,7 @@ export default class FacetedSearch extends HTMLElement {
             console.warn('FacetedSearch: Multiple search inputs registered. Only the latest will be used.');
         }
         this.#searchComponent = component;
+        this.#listenForUnregister(component, 'facetedSearchUnregisterSearchInput', this.#unregisterSearchInput);
         this.#buildModel();
     }
 
@@ -101,6 +117,7 @@ export default class FacetedSearch extends HTMLElement {
             throw new Error(`FacetedSearch: Duplicate filter name "${data.name}".`);
         }
         this.#filterComponents.push(component);
+        this.#listenForUnregister(component, 'facetedSearchUnregisterFilterValues', this.#unregisterFilterValues);
         this.#buildModel();
     }
 
@@ -114,6 +131,7 @@ export default class FacetedSearch extends HTMLElement {
     #registerReader(component) {
         if (!component) throw new Error('FacetedSearch: registerResultReader requires detail.element.');
         this.#readerComponent = component;
+        this.#listenForUnregister(component, 'facetedSearchUnregisterResultReader', this.#unregisterReader);
         this.#buildModel();
     }
 
@@ -129,6 +147,7 @@ export default class FacetedSearch extends HTMLElement {
     #registerUpdater(component) {
         if (!component) throw new Error('FacetedSearch: registerResultUpdater requires detail.element.');
         this.#updaterComponent = component;
+        this.#listenForUnregister(component, 'facetedSearchUnregisterResultUpdater', this.#unregisterUpdater);
         this.#updateChildren();
     }
 
