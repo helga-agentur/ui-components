@@ -169,3 +169,108 @@ test('setChecked sets checkbox state programmatically', async (t) => {
     t.true(checkbox.checked);
     t.is(errors.length, 0);
 });
+
+// select-one-only support
+
+const selectOneFilterHTML = `
+    <faceted-search-filter-values
+        data-filter-name="size"
+        data-item-selector=".filter-item"
+        data-item-value-selector="[data-value]"
+        data-item-id-selector="[data-id]"
+        data-item-amount-selector=".count"
+    >
+        <div class="filter-item" data-id="size-s" data-value="small">
+            <input type="radio" name="size" />
+            <span>Small</span>
+            <span class="count">0</span>
+        </div>
+        <div class="filter-item" data-id="size-m" data-value="medium">
+            <input type="radio" name="size" />
+            <span>Medium</span>
+            <span class="count">0</span>
+        </div>
+        <div class="filter-item" data-id="size-l" data-value="large">
+            <input type="radio" name="size" />
+            <span>Large</span>
+            <span class="count">0</span>
+        </div>
+    </faceted-search-filter-values>
+`;
+
+test('selectOneOnly: first selection emits only select event', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = selectOneFilterHTML;
+    document.body.appendChild(container);
+
+    const component = document.querySelector('faceted-search-filter-values');
+    component.getFilterData();
+
+    const events = [];
+    component.addEventListener('facetedSearchFilterChange', (ev) => {
+        events.push(ev.detail);
+    });
+
+    const checkbox = document.querySelector('[data-value="small"] input');
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+    t.is(events.length, 1);
+    t.deepEqual(events[0], { name: 'size', value: 'small', selected: true });
+});
+
+test('selectOneOnly: selecting another value emits deselect then select', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = selectOneFilterHTML;
+    document.body.appendChild(container);
+
+    const component = document.querySelector('faceted-search-filter-values');
+    component.getFilterData();
+
+    const events = [];
+    component.addEventListener('facetedSearchFilterChange', (ev) => {
+        events.push({ ...ev.detail });
+    });
+
+    const first = document.querySelector('[data-value="small"] input');
+    first.checked = true;
+    first.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+    const second = document.querySelector('[data-value="medium"] input');
+    second.checked = true;
+    second.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+    t.is(events.length, 3);
+    t.deepEqual(events[0], { name: 'size', value: 'small', selected: true });
+    t.deepEqual(events[1], { name: 'size', value: 'small', selected: false });
+    t.deepEqual(events[2], { name: 'size', value: 'medium', selected: true });
+});
+
+test('selectOneOnly: setChecked tracks active value for subsequent changes', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = selectOneFilterHTML;
+    document.body.appendChild(container);
+
+    const component = document.querySelector('faceted-search-filter-values');
+
+    // Programmatically select "small"
+    component.setChecked('small', true);
+    t.true(document.querySelector('[data-value="small"] input').checked);
+
+    // Now simulate user clicking "medium" — should emit deselect for "small"
+    const events = [];
+    component.addEventListener('facetedSearchFilterChange', (ev) => {
+        events.push({ ...ev.detail });
+    });
+
+    const medium = document.querySelector('[data-value="medium"] input');
+    medium.checked = true;
+    medium.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+    t.is(events.length, 2);
+    t.deepEqual(events[0], { name: 'size', value: 'small', selected: false });
+    t.deepEqual(events[1], { name: 'size', value: 'medium', selected: true });
+});

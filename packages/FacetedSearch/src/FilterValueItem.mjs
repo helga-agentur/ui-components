@@ -1,7 +1,7 @@
 /**
  * Represents a single filter value item. Caches DOM references on construction,
- * binds checkbox listener, and exposes methods for updating count, toggling
- * empty class, and setting checkbox state.
+ * binds input listener, and exposes methods for updating count, toggling
+ * empty class, and setting checked state.
  * Not a web component — instantiated by FacetedSearchFilterValues.
  */
 import { readItemAttribute } from './extractItemData.mjs';
@@ -18,7 +18,7 @@ export default class FilterValueItem {
     #value;
 
     /** @type {HTMLInputElement|null} */
-    #checkbox;
+    #input;
 
     /** @type {HTMLElement|null} */
     #countElement;
@@ -35,14 +35,14 @@ export default class FilterValueItem {
         this.#element = element;
         this.#id = readItemAttribute(element, idSelector);
         this.#value = readItemAttribute(element, valueSelector);
-        this.#checkbox = element.querySelector('input[type="checkbox"]');
+        this.#input = element.querySelector('input[type="checkbox"], input[type="radio"]');
         this.#countElement = amountSelector
             ? element.querySelector(amountSelector)
             : null;
 
-        if (this.#checkbox) {
-            this.#checkbox.addEventListener('change', () => {
-                onChange({ value: this.#value, selected: this.#checkbox.checked });
+        if (this.#input) {
+            this.#input.addEventListener('change', () => {
+                onChange({ value: this.#value, selected: this.#input.checked });
             });
         }
     }
@@ -50,6 +50,8 @@ export default class FilterValueItem {
     get id() { return this.#id; }
     get value() { return this.#value; }
     get element() { return this.#element; }
+    get checked() { return this.#input ? this.#input.checked : false; }
+    get isRadio() { return this.#input?.type === 'radio'; }
 
     /**
      * Updates the displayed count and toggles the empty-result class.
@@ -63,6 +65,6 @@ export default class FilterValueItem {
 
     /** @param {boolean} selected */
     setChecked(selected) {
-        if (this.#checkbox) this.#checkbox.checked = selected;
+        if (this.#input) this.#input.checked = selected;
     }
 }

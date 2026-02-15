@@ -1,7 +1,8 @@
 /**
  * Web component that wraps server-rendered filter value items.
- * Reads filter values from DOM, emits change events on checkbox toggle,
- * and updates expected result counts.
+ * Reads filter values from DOM, emits change events on input toggle,
+ * and updates expected result counts. Supports both checkbox (multi-select)
+ * and radio (single-select) inputs, detected automatically.
  */
 import { readAttribute } from '@helga-agency/ui-tools';
 import FilterValueItem from './FilterValueItem.mjs';
@@ -23,6 +24,13 @@ export default class FacetedSearchFilterValues extends HTMLElement {
 
     /** @type {boolean} */
     #isCollected = false;
+
+    /** @type {boolean} Derived from the first item's input type during collection */
+    #selectOneOnly = false;
+
+    /** @type {string|null} Tracks the active value for single-select filters;
+     *  needed because browsers don't fire change on the deselected radio. */
+    #activeValue = null;
 
     constructor() {
         super();
@@ -73,7 +81,7 @@ export default class FacetedSearchFilterValues extends HTMLElement {
         }));
     }
 
-    /** Lazily collects items and binds checkbox listeners. */
+    /** Lazily collects items and binds input listeners. */
     #ensureCollected() {
         if (this.#isCollected) return;
         this.#isCollected = true;
@@ -85,14 +93,42 @@ export default class FacetedSearchFilterValues extends HTMLElement {
         };
 
         const onChange = ({ value, selected }) => {
-            this.dispatchEvent(new CustomEvent('facetedSearchFilterChange', {
-                bubbles: true,
-                detail: { name: this.#filterName, value, selected },
-            }));
+            this.#handleChange(value, selected);
         };
 
         this.#items = [...this.querySelectorAll(this.#itemSelector)]
             .map((el) => new FilterValueItem(el, config, onChange));
+
+        this.#selectOneOnly = this.#items.length > 0 && this.#items[0].isRadio;
+    }
+
+    /**
+     * Handles an input change. When selectOneOnly is true, emits a deselect
+     * for the previously checked item before emitting the new selection.
+     * @param {string} value
+     * @param {boolean} selected
+     */
+    #handleChange(value, selected) {
+        if (this.#selectOneOnly && selected && this.#activeValue !== null && this.#activeValue !== value) {
+            this.#dispatch(this.#activeValue, false);
+        }
+
+        if (this.#selectOneOnly) {
+            this.#activeValue = selected ? value : null;
+        }
+
+        this.#dispatch(value, selected);
+    }
+
+    /**
+     * @param {string} value
+     * @param {boolean} selected
+     */
+    #dispatch(value, selected) {
+        this.dispatchEvent(new CustomEvent('facetedSearchFilterChange', {
+            bubbles: true,
+            detail: { name: this.#filterName, value, selected },
+        }));
     }
 
     /**
@@ -120,12 +156,18 @@ export default class FacetedSearchFilterValues extends HTMLElement {
     }
 
     /**
-     * Sets checkbox state programmatically (used by orchestrator for URL restore).
+     * Sets input state programmatically (used by orchestrator for URL restore).
+     * When selectOneOnly is true, deselects the previously checked item.
      * @param {string} value - The filter value to select
      * @param {boolean} selected
      */
     setChecked(value, selected) {
         this.#ensureCollected();
+
+        if (this.#selectOneOnly) {
+            this.#activeValue = selected ? value : null;
+        }
+
         const item = this.#items.find((entry) => entry.value === value);
         if (item) item.setChecked(selected);
     }
