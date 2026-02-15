@@ -1,7 +1,10 @@
 import createRollupConfig from '../../createRollupConfig.mjs';
 
 const components = [
-    'FacetedSearchElement.js',
+    'FacetedSearchElement.mjs',
+    'FacetedSearchResultItemsElement.mjs',
+    'FacetedSearchFilterValuesElement.mjs',
+    'FacetedSearchInputElement.mjs',
 ];
 
 export default createRollupConfig(components);
