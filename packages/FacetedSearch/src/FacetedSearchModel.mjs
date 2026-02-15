@@ -117,7 +117,8 @@ export default class FacetedSearchModel {
             if (config.boost) boostConfig[config.field] = config.boost;
         });
 
-        const options = {};
+        // prefix: true so that partial input matches longer tokens (e.g. "ab" → "abstract")
+        const options = { prefix: true };
         if (this.#fuzzy) options.fuzzy = 0.2;
         if (Object.keys(boostConfig).length > 0) options.boost = boostConfig;
 
