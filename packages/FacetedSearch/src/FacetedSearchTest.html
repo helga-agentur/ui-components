@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body { font-family: sans-serif; max-width: 900px; margin: 2em auto; }
+            .filters { display: flex; gap: 2em; margin-bottom: 1em; }
+            .filter-group { border: 1px solid #ccc; padding: 1em; border-radius: 4px; }
+            .filter-group h3 { margin-top: 0; }
+            .filter-item { padding: 0.25em 0; }
+            .filter-item .count { color: #888; font-size: 0.85em; }
+            .filter-item .count::before { content: "("; }
+            .filter-item .count::after { content: ")"; }
+            .filter-item.is-empty { opacity: 0.4; }
+            .result-item { padding: 0.5em; border-bottom: 1px solid #eee; }
+            .result-item[hidden] { display: none; }
+            .empty-message[hidden] { display: none; }
+            .search-bar { margin-bottom: 1em; }
+            .search-bar input { padding: 0.5em; width: 300px; }
+        </style>
+    </head>
+    <body>
+
+        <h1>FacetedSearch Test</h1>
+
+        <faceted-search data-fuzzy-search data-order-by-relevance>
+
+            <!-- Search input -->
+            <faceted-search-input
+                data-live-search
+                data-debounce="200"
+                data-propagate-to-url
+                class="search-bar"
+            >
+                <input type="text" placeholder="Search products..." />
+            </faceted-search-input>
+
+            <div class="filters">
+
+                <!-- Checkbox filter: Category (multi-select) -->
+                <faceted-search-filter-values
+                    data-filter-name="category"
+                    data-item-selector=".filter-item"
+                    data-item-value-selector="[data-value]"
+                    data-item-id-selector="[data-id]"
+                    data-leads-to-empty-result-class="is-empty"
+                    data-item-amount-selector=".count"
+                    data-propagate-to-url
+                    class="filter-group"
+                >
+                    <h3>Category</h3>
+                    <div class="filter-item" data-id="cat-shoes" data-value="shoes">
+                        <label><input type="checkbox" /> Shoes <span class="count">0</span></label>
+                    </div>
+                    <div class="filter-item" data-id="cat-hats" data-value="hats">
+                        <label><input type="checkbox" /> Hats <span class="count">0</span></label>
+                    </div>
+                    <div class="filter-item" data-id="cat-bags" data-value="bags">
+                        <label><input type="checkbox" /> Bags <span class="count">0</span></label>
+                    </div>
+                </faceted-search-filter-values>
+
+                <!-- Checkbox filter: Color (multi-select) -->
+                <faceted-search-filter-values
+                    data-filter-name="color"
+                    data-item-selector=".filter-item"
+                    data-item-value-selector="[data-value]"
+                    data-item-id-selector="[data-id]"
+                    data-leads-to-empty-result-class="is-empty"
+                    data-item-amount-selector=".count"
+                    data-propagate-to-url
+                    class="filter-group"
+                >
+                    <h3>Color</h3>
+                    <div class="filter-item" data-id="col-red" data-value="red">
+                        <label><input type="checkbox" /> Red <span class="count">0</span></label>
+                    </div>
+                    <div class="filter-item" data-id="col-blue" data-value="blue">
+                        <label><input type="checkbox" /> Blue <span class="count">0</span></label>
+                    </div>
+                    <div class="filter-item" data-id="col-green" data-value="green">
+                        <label><input type="checkbox" /> Green <span class="count">0</span></label>
+                    </div>
+                </faceted-search-filter-values>
+
+                <!-- Radio filter: Size (single-select) -->
+                <faceted-search-filter-values
+                    data-filter-name="size"
+                    data-item-selector=".filter-item"
+                    data-item-value-selector="[data-value]"
+                    data-item-id-selector="[data-id]"
+                    data-leads-to-empty-result-class="is-empty"
+                    data-item-amount-selector=".count"
+                    data-propagate-to-url
+                    class="filter-group"
+                >
+                    <h3>Size (single)</h3>
+                    <div class="filter-item" data-id="size-s" data-value="S">
+                        <label><input type="radio" name="size" /> S <span class="count">0</span></label>
+                    </div>
+                    <div class="filter-item" data-id="size-m" data-value="M">
+                        <label><input type="radio" name="size" /> M <span class="count">0</span></label>
+                    </div>
+                    <div class="filter-item" data-id="size-l" data-value="L">
+                        <label><input type="radio" name="size" /> L <span class="count">0</span></label>
+                    </div>
+                </faceted-search-filter-values>
+
+            </div>
+
+            <!-- Results -->
+            <faceted-search-result-updater
+                data-item-selector=".result-item"
+                data-item-id-selector="[data-id]"
+                data-empty-results-selector=".empty-message"
+                data-results-selector=".results"
+            >
+                <p class="empty-message" hidden>No results found.</p>
+                <div class="results">
+                    <faceted-search-result-reader
+                        data-item-selector=".result-item"
+                        data-item-id-selector="[data-id]"
+                        data-filter-properties='[
+                            {"fieldIDSelector": "[data-category]", "filterName": "category"},
+                            {"fieldIDSelector": "[data-color]", "filterName": "color"},
+                            {"fieldIDSelector": "[data-size]", "filterName": "size"}
+                        ]'
+                        data-search-properties='[
+                            {"fieldIDSelector": "[data-name]"}
+                        ]'
+                    >
+                        <div class="result-item" data-id="1" data-category="shoes" data-color="red" data-size="M" data-name="Red Running Shoe">Red Running Shoe - Shoes, Red, M</div>
+                        <div class="result-item" data-id="2" data-category="shoes" data-color="blue" data-size="L" data-name="Blue Walking Shoe">Blue Walking Shoe - Shoes, Blue, L</div>
+                        <div class="result-item" data-id="3" data-category="hats" data-color="red" data-size="S" data-name="Red Baseball Hat">Red Baseball Hat - Hats, Red, S</div>
+                        <div class="result-item" data-id="4" data-category="hats" data-color="green" data-size="M" data-name="Green Bucket Hat">Green Bucket Hat - Hats, Green, M</div>
+                        <div class="result-item" data-id="5" data-category="bags" data-color="blue" data-size="L" data-name="Blue Tote Bag">Blue Tote Bag - Bags, Blue, L</div>
+                        <div class="result-item" data-id="6" data-category="bags" data-color="green" data-size="S" data-name="Green Backpack">Green Backpack - Bags, Green, S</div>
+                        <div class="result-item" data-id="7" data-category="shoes" data-color="green" data-size="S" data-name="Green Trail Shoe">Green Trail Shoe - Shoes, Green, S</div>
+                        <div class="result-item" data-id="8" data-category="hats" data-color="blue" data-size="L" data-name="Blue Sun Hat">Blue Sun Hat - Hats, Blue, L</div>
+                    </faceted-search-result-reader>
+                </div>
+            </faceted-search-result-updater>
+
+        </faceted-search>
+
+        <script type="module" src="./FacetedSearchElement.mjs"></script>
+        <script type="module" src="./FacetedSearchInputElement.mjs"></script>
+        <script type="module" src="./FacetedSearchFilterValuesElement.mjs"></script>
+        <script type="module" src="./FacetedSearchResultReaderElement.mjs"></script>
+        <script type="module" src="./FacetedSearchResultUpdaterElement.mjs"></script>
+
+    </body>
+</html>

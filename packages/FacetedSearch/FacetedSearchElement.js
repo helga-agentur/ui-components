@@ -2206,12 +2206,15 @@
         }
 
         /**
-         * Builds the query object for itemsjs, combining active filters with
-         * MiniSearch IDs (if a search term is active).
-         * @param {{ [filterName: string]: string[] }} [filterOverrides] - Optional filter state override
-         * @returns {object} itemsjs search query
+         * Builds a query object that itemsjs can execute. Merges the active (or
+         * overridden) filter state with pre-computed MiniSearch IDs so that
+         * itemsjs handles faceted filtering while MiniSearch handles full-text
+         * search. The returned object is passed directly to itemsjs.search().
+         * @param {string[]|null} searchedIds - Pre-computed MiniSearch result IDs, or null when no search is active
+         * @param {{ [filterName: string]: string[] }} [filterOverrides] - Optional filter state override for hypothetical queries
+         * @returns {object} itemsjs-compatible search query
          */
-        #buildQuery(filterOverrides) {
+        #buildQuery(searchedIds, filterOverrides) {
             const activeFilters = filterOverrides || this.#activeFilters;
             const query = { per_page: 100000 };
 
@@ -2221,7 +2224,6 @@
             });
             if (Object.keys(filters).length > 0) query.filters = filters;
 
-            const searchedIds = this.#getSearchedIds();
             if (searchedIds !== null) query.ids = searchedIds;
 
             return query;
@@ -2240,7 +2242,7 @@
             // No search, no filters → all items in original order
             if (searchedIds === null && !hasActiveFilters) return this.#originalOrder;
 
-            const query = this.#buildQuery(filterOverrides);
+            const query = this.#buildQuery(searchedIds, filterOverrides);
             const result = this.#filterEngine.search(query);
             const resultIds = result.data.items.map((item) => item.id);
 
@@ -2298,15 +2300,17 @@
 
             filterValues.forEach(({ id, value }) => {
                 const isActive = currentFilterState.includes(value);
+                const tempFilters = { ...this.#activeFilters };
 
                 if (isActive) {
-                    counts[id] = this.#computeVisibleIds().length;
+                    // Show count if this value were removed
+                    tempFilters[filterName] = currentFilterState.filter((active) => active !== value);
                 } else {
-                    // Build a temporary filter state with this value added
-                    const tempFilters = { ...this.#activeFilters };
+                    // Show count if this value were added
                     tempFilters[filterName] = [...currentFilterState, value];
-                    counts[id] = this.#computeVisibleIds(tempFilters).length;
                 }
+
+                counts[id] = this.#computeVisibleIds(tempFilters).length;
             });
 
             return counts;
@@ -2416,8 +2420,11 @@
         /** @type {object[]} FacetedSearchFilterValues components */
         #filterComponents = [];
 
-        /** @type {object|null} FacetedSearchResultItems component */
-        #resultItemsComponent = null;
+        /** @type {object|null} FacetedSearchResultReader component */
+        #readerComponent = null;
+
+        /** @type {object|null} FacetedSearchResultUpdater component */
+        #updaterComponent = null;
 
         /** @type {FacetedSearchModel|null} */
         #model = null;
@@ -2439,15 +2446,15 @@
         }
 
         connectedCallback() {
-            this.addEventListener('registerSearchInput', (ev) => {
-                this.#registerSearchInput(ev.detail?.element);
-            });
-            this.addEventListener('registerFilterValues', (ev) => {
-                this.#registerFilterValues(ev.detail?.element);
-            });
-            this.addEventListener('registerResultItems', (ev) => {
-                this.#registerResultItems(ev.detail?.element);
-            });
+            this.#listenForRegistration('facetedSearchRegisterSearchInput', this.#registerSearchInput);
+            this.#listenForRegistration('facetedSearchRegisterFilterValues', this.#registerFilterValues);
+            this.#listenForRegistration('facetedSearchRegisterResultReader', this.#registerReader);
+            this.#listenForRegistration('facetedSearchRegisterResultUpdater', this.#registerUpdater);
+            this.#listenForRegistration('facetedSearchUnregisterSearchInput', this.#unregisterSearchInput);
+            this.#listenForRegistration('facetedSearchUnregisterFilterValues', this.#unregisterFilterValues);
+            this.#listenForRegistration('facetedSearchUnregisterResultReader', this.#unregisterReader);
+            this.#listenForRegistration('facetedSearchUnregisterResultUpdater', this.#unregisterUpdater);
+
             this.addEventListener('facetedSearchTermChange', (ev) => {
                 this.#handleSearchTermChange(ev.detail.term);
             });
@@ -2457,11 +2464,33 @@
             });
         }
 
+        /**
+         * Registers a listener for a child registration/unregistration event,
+         * extracting the component reference from `detail.element`.
+         * @param {string} eventName
+         * @param {Function} handler
+         */
+        #listenForRegistration(eventName, handler) {
+            this.addEventListener(eventName, (ev) => {
+                handler.call(this, ev.detail?.element);
+            });
+        }
+
         /** @param {object} component */
         #registerSearchInput(component) {
             if (!component) throw new Error('FacetedSearch: registerSearchInput requires detail.element.');
+            if (this.#searchComponent) {
+                console.warn('FacetedSearch: Multiple search inputs registered. Only the latest will be used.');
+            }
             this.#searchComponent = component;
             this.#buildModel();
+        }
+
+        /** @param {object} component */
+        #unregisterSearchInput(component) {
+            if (this.#searchComponent === component) {
+                this.#searchComponent = null;
+            }
         }
 
         /** @param {object} component */
@@ -2479,22 +2508,50 @@
         }
 
         /** @param {object} component */
-        #registerResultItems(component) {
-            if (!component) throw new Error('FacetedSearch: registerResultItems requires detail.element.');
-            this.#resultItemsComponent = component;
+        #unregisterFilterValues(component) {
+            this.#filterComponents = this.#filterComponents.filter((existing) => existing !== component);
             this.#buildModel();
+        }
+
+        /** @param {object} component */
+        #registerReader(component) {
+            if (!component) throw new Error('FacetedSearch: registerResultReader requires detail.element.');
+            this.#readerComponent = component;
+            this.#buildModel();
+        }
+
+        /** @param {object} component */
+        #unregisterReader(component) {
+            if (this.#readerComponent === component) {
+                this.#readerComponent = null;
+                this.#model = null;
+            }
+        }
+
+        /** @param {object} component */
+        #registerUpdater(component) {
+            if (!component) throw new Error('FacetedSearch: registerResultUpdater requires detail.element.');
+            this.#updaterComponent = component;
+            this.#updateChildren();
+        }
+
+        /** @param {object} component */
+        #unregisterUpdater(component) {
+            if (this.#updaterComponent === component) {
+                this.#updaterComponent = null;
+            }
         }
 
         /**
          * (Re)builds the model from the currently registered components.
-         * Called after every child registration; requires result-items to be
+         * Called after every child registration; requires the reader to be
          * present, search input and filters are optional. Rebuilds the model
          * each time so that late-registering components are included.
          */
         #buildModel() {
-            if (!this.#resultItemsComponent) return;
+            if (!this.#readerComponent) return;
 
-            const items = this.#resultItemsComponent.getItemData();
+            const items = this.#readerComponent.getItemData();
 
             // Derive filter and search configs from the collected item data
             const filterConfigs = this.#filterComponents.map(
@@ -2512,10 +2569,10 @@
                 orderByRelevance: this.#orderByRelevance,
             });
 
-            this.#model.on('change', () => this.#updateChildren());
-
-            // Restore any state encoded in the URL hash before rendering
+            // Restore state before attaching the change listener to avoid
+            // redundant #updateChildren calls for each restored value.
             this.#restoreFromHash();
+            this.#model.on('change', () => this.#updateChildren());
             this.#updateChildren();
         }
 
@@ -2560,8 +2617,12 @@
 
         /** Pushes current model state to all child components. */
         #updateChildren() {
-            const visibleIds = this.#model.getVisibleIds();
-            this.#resultItemsComponent.updateVisibility(visibleIds);
+            if (!this.#model) return;
+
+            if (this.#updaterComponent) {
+                const visibleIds = this.#model.getVisibleIds();
+                this.#updaterComponent.updateVisibility(visibleIds);
+            }
 
             this.#filterComponents.forEach((component) => {
                 const filterData = component.getFilterData();

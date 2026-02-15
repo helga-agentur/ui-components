@@ -52,8 +52,8 @@
 
     /**
      * Represents a single filter value item. Caches DOM references on construction,
-     * binds checkbox listener, and exposes methods for updating count, toggling
-     * empty class, and setting checkbox state.
+     * binds input listener, and exposes methods for updating count, toggling
+     * empty class, and setting checked state.
      * Not a web component — instantiated by FacetedSearchFilterValues.
      */
 
@@ -69,7 +69,7 @@
         #value;
 
         /** @type {HTMLInputElement|null} */
-        #checkbox;
+        #input;
 
         /** @type {HTMLElement|null} */
         #countElement;
@@ -86,14 +86,14 @@
             this.#element = element;
             this.#id = readItemAttribute(element, idSelector);
             this.#value = readItemAttribute(element, valueSelector);
-            this.#checkbox = element.querySelector('input[type="checkbox"]');
+            this.#input = element.querySelector('input[type="checkbox"], input[type="radio"]');
             this.#countElement = amountSelector
                 ? element.querySelector(amountSelector)
                 : null;
 
-            if (this.#checkbox) {
-                this.#checkbox.addEventListener('change', () => {
-                    onChange({ value: this.#value, selected: this.#checkbox.checked });
+            if (this.#input) {
+                this.#input.addEventListener('change', () => {
+                    onChange({ value: this.#value, selected: this.#input.checked });
                 });
             }
         }
@@ -101,6 +101,8 @@
         get id() { return this.#id; }
         get value() { return this.#value; }
         get element() { return this.#element; }
+        get checked() { return this.#input ? this.#input.checked : false; }
+        get isRadio() { return this.#input?.type === 'radio'; }
 
         /**
          * Updates the displayed count and toggles the empty-result class.
@@ -114,14 +116,15 @@
 
         /** @param {boolean} selected */
         setChecked(selected) {
-            if (this.#checkbox) this.#checkbox.checked = selected;
+            if (this.#input) this.#input.checked = selected;
         }
     }
 
     /**
      * Web component that wraps server-rendered filter value items.
-     * Reads filter values from DOM, emits change events on checkbox toggle,
-     * and updates expected result counts.
+     * Reads filter values from DOM, emits change events on input toggle,
+     * and updates expected result counts. Supports both checkbox (multi-select)
+     * and radio (single-select) inputs, detected automatically.
      */
 
     /* global HTMLElement, CustomEvent */
@@ -141,6 +144,13 @@
 
         /** @type {boolean} */
         #isCollected = false;
+
+        /** @type {boolean} Derived from the first item's input type during collection */
+        #selectOneOnly = false;
+
+        /** @type {string|null} Tracks the active value for single-select filters;
+         *  needed because browsers don't fire change on the deselected radio. */
+        #activeValue = null;
 
         constructor() {
             super();
@@ -177,14 +187,21 @@
             /* Delay registration so the parent orchestrator has time to set up
                its listeners, even if this component's JS loads first. */
             setTimeout(() => {
-                this.dispatchEvent(new CustomEvent('registerFilterValues', {
+                this.dispatchEvent(new CustomEvent('facetedSearchRegisterFilterValues', {
                     bubbles: true,
                     detail: { element: this },
                 }));
             });
         }
 
-        /** Lazily collects items and binds checkbox listeners. */
+        disconnectedCallback() {
+            this.dispatchEvent(new CustomEvent('facetedSearchUnregisterFilterValues', {
+                bubbles: true,
+                detail: { element: this },
+            }));
+        }
+
+        /** Lazily collects items and binds input listeners. */
         #ensureCollected() {
             if (this.#isCollected) return;
             this.#isCollected = true;
@@ -196,14 +213,42 @@
             };
 
             const onChange = ({ value, selected }) => {
-                this.dispatchEvent(new CustomEvent('facetedSearchFilterChange', {
-                    bubbles: true,
-                    detail: { name: this.#filterName, value, selected },
-                }));
+                this.#handleChange(value, selected);
             };
 
             this.#items = [...this.querySelectorAll(this.#itemSelector)]
                 .map((el) => new FilterValueItem(el, config, onChange));
+
+            this.#selectOneOnly = this.#items.length > 0 && this.#items[0].isRadio;
+        }
+
+        /**
+         * Handles an input change. When selectOneOnly is true, emits a deselect
+         * for the previously checked item before emitting the new selection.
+         * @param {string} value
+         * @param {boolean} selected
+         */
+        #handleChange(value, selected) {
+            if (this.#selectOneOnly && selected && this.#activeValue !== null && this.#activeValue !== value) {
+                this.#dispatch(this.#activeValue, false);
+            }
+
+            if (this.#selectOneOnly) {
+                this.#activeValue = selected ? value : null;
+            }
+
+            this.#dispatch(value, selected);
+        }
+
+        /**
+         * @param {string} value
+         * @param {boolean} selected
+         */
+        #dispatch(value, selected) {
+            this.dispatchEvent(new CustomEvent('facetedSearchFilterChange', {
+                bubbles: true,
+                detail: { name: this.#filterName, value, selected },
+            }));
         }
 
         /**
@@ -231,12 +276,18 @@
         }
 
         /**
-         * Sets checkbox state programmatically (used by orchestrator for URL restore).
+         * Sets input state programmatically (used by orchestrator for URL restore).
+         * When selectOneOnly is true, deselects the previously checked item.
          * @param {string} value - The filter value to select
          * @param {boolean} selected
          */
         setChecked(value, selected) {
             this.#ensureCollected();
+
+            if (this.#selectOneOnly) {
+                this.#activeValue = selected ? value : null;
+            }
+
             const item = this.#items.find((entry) => entry.value === value);
             if (item) item.setChecked(selected);
         }
