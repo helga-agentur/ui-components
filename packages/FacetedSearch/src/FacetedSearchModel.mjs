@@ -126,12 +126,15 @@ export default class FacetedSearchModel {
     }
 
     /**
-     * Builds the query object for itemsjs, combining active filters with
-     * MiniSearch IDs (if a search term is active).
-     * @param {{ [filterName: string]: string[] }} [filterOverrides] - Optional filter state override
-     * @returns {object} itemsjs search query
+     * Builds a query object that itemsjs can execute. Merges the active (or
+     * overridden) filter state with pre-computed MiniSearch IDs so that
+     * itemsjs handles faceted filtering while MiniSearch handles full-text
+     * search. The returned object is passed directly to itemsjs.search().
+     * @param {string[]|null} searchedIds - Pre-computed MiniSearch result IDs, or null when no search is active
+     * @param {{ [filterName: string]: string[] }} [filterOverrides] - Optional filter state override for hypothetical queries
+     * @returns {object} itemsjs-compatible search query
      */
-    #buildQuery(filterOverrides) {
+    #buildQuery(searchedIds, filterOverrides) {
         const activeFilters = filterOverrides || this.#activeFilters;
         const query = { per_page: 100000 };
 
@@ -141,7 +144,6 @@ export default class FacetedSearchModel {
         });
         if (Object.keys(filters).length > 0) query.filters = filters;
 
-        const searchedIds = this.#getSearchedIds();
         if (searchedIds !== null) query.ids = searchedIds;
 
         return query;
@@ -160,7 +162,7 @@ export default class FacetedSearchModel {
         // No search, no filters → all items in original order
         if (searchedIds === null && !hasActiveFilters) return this.#originalOrder;
 
-        const query = this.#buildQuery(filterOverrides);
+        const query = this.#buildQuery(searchedIds, filterOverrides);
         const result = this.#filterEngine.search(query);
         const resultIds = result.data.items.map((item) => item.id);
 
@@ -218,15 +220,17 @@ export default class FacetedSearchModel {
 
         filterValues.forEach(({ id, value }) => {
             const isActive = currentFilterState.includes(value);
+            const tempFilters = { ...this.#activeFilters };
 
             if (isActive) {
-                counts[id] = this.#computeVisibleIds().length;
+                // Show count if this value were removed
+                tempFilters[filterName] = currentFilterState.filter((active) => active !== value);
             } else {
-                // Build a temporary filter state with this value added
-                const tempFilters = { ...this.#activeFilters };
+                // Show count if this value were added
                 tempFilters[filterName] = [...currentFilterState, value];
-                counts[id] = this.#computeVisibleIds(tempFilters).length;
             }
+
+            counts[id] = this.#computeVisibleIds(tempFilters).length;
         });
 
         return counts;

@@ -295,3 +295,85 @@ test('does not write to URL hash when propagateToUrl is false', async (t) => {
 
     t.is(window.location.hash, '');
 });
+
+// Unregistration
+
+test('unregistering a filter component removes it from updates', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const resultItems = createMockResultItems(document, window, testItems);
+    const filterCategory = createMockFilterValues('category', [
+        { id: 'c1', value: 'shoes' },
+        { id: 'c2', value: 'hats' },
+    ]);
+
+    fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    t.truthy(filterCategory.lastCounts);
+
+    // Reset and unregister
+    filterCategory.lastCounts = null;
+    fireRegistration(orchestrator, 'unregisterFilterValues', filterCategory, window);
+
+    // Trigger an update — filter should no longer receive counts
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'running' },
+    }));
+
+    t.is(filterCategory.lastCounts, null);
+});
+
+test('unregistering result items clears the model', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const resultItems = createMockResultItems(document, window, testItems);
+    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    t.deepEqual(resultItems.lastVisibleIds, ['1', '2', '3']);
+
+    fireRegistration(orchestrator, 'unregisterResultItems', resultItems, window);
+
+    // Search term change should be silently ignored (no model)
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'running' },
+    }));
+
+    // lastVisibleIds should not have changed since unregister
+    t.deepEqual(resultItems.lastVisibleIds, ['1', '2', '3']);
+});
+
+// Multiple search input warning
+
+test('warns when a second search input registers', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const resultItems = createMockResultItems(document, window, testItems);
+    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+
+    const input1 = createMockSearchInput();
+    const input2 = createMockSearchInput();
+    fireRegistration(orchestrator, 'registerSearchInput', input1, window);
+    fireRegistration(orchestrator, 'registerSearchInput', input2, window);
+
+    console.warn = originalWarn;
+
+    t.is(warnings.length, 1);
+    t.regex(warnings[0], /Multiple search inputs/);
+});

@@ -61,6 +61,13 @@ export default class FacetedSearchInput extends HTMLElement {
         });
     }
 
+    disconnectedCallback() {
+        this.dispatchEvent(new CustomEvent('unregisterSearchInput', {
+            bubbles: true,
+            detail: { element: this },
+        }));
+    }
+
     #emitTerm() {
         this.dispatchEvent(new CustomEvent('facetedSearchTermChange', {
             bubbles: true,

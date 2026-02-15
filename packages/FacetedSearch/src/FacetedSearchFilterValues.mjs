@@ -66,6 +66,13 @@ export default class FacetedSearchFilterValues extends HTMLElement {
         });
     }
 
+    disconnectedCallback() {
+        this.dispatchEvent(new CustomEvent('unregisterFilterValues', {
+            bubbles: true,
+            detail: { element: this },
+        }));
+    }
+
     /** Lazily collects items and binds checkbox listeners. */
     #ensureCollected() {
         if (this.#isCollected) return;

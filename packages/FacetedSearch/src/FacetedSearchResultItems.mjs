@@ -60,6 +60,13 @@ export default class FacetedSearchResultItems extends HTMLElement {
         });
     }
 
+    disconnectedCallback() {
+        this.dispatchEvent(new CustomEvent('unregisterResultItems', {
+            bubbles: true,
+            detail: { element: this },
+        }));
+    }
+
     /**
      * Lazily collects items from the DOM on first access.
      * Deferred because children may not be available in connectedCallback.

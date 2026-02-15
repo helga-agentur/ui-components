@@ -143,6 +143,20 @@ test('computes expected results with active cross-filter', (t) => {
     t.is(counts['col-green'], 0);
 });
 
+test('computes expected results for active values within same filter', (t) => {
+    const model = createTestModel();
+    model.setFilter('color', 'red', true);
+    model.setFilter('color', 'blue', true);
+    // color=red,blue active → visible items: 1 (red shoe), 2 (blue shoe), 3 (red hat)
+    // Removing red → only blue remains → 1 item (item 2)
+    // Removing blue → only red remains → 2 items (items 1, 3)
+    // Adding green → red,blue,green → 4 items
+    const counts = model.getExpectedResults('color', filterValues.color);
+    t.is(counts['col-red'], 1);
+    t.is(counts['col-blue'], 2);
+    t.is(counts['col-green'], 4);
+});
+
 // Fuzzy search
 
 test('handles fuzzy search', (t) => {

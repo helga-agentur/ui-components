@@ -43,11 +43,20 @@ export default class FacetedSearch extends HTMLElement {
         this.addEventListener('registerSearchInput', (ev) => {
             this.#registerSearchInput(ev.detail?.element);
         });
+        this.addEventListener('unregisterSearchInput', (ev) => {
+            this.#unregisterSearchInput(ev.detail?.element);
+        });
         this.addEventListener('registerFilterValues', (ev) => {
             this.#registerFilterValues(ev.detail?.element);
         });
+        this.addEventListener('unregisterFilterValues', (ev) => {
+            this.#unregisterFilterValues(ev.detail?.element);
+        });
         this.addEventListener('registerResultItems', (ev) => {
             this.#registerResultItems(ev.detail?.element);
+        });
+        this.addEventListener('unregisterResultItems', (ev) => {
+            this.#unregisterResultItems(ev.detail?.element);
         });
         this.addEventListener('facetedSearchTermChange', (ev) => {
             this.#handleSearchTermChange(ev.detail.term);
@@ -61,8 +70,18 @@ export default class FacetedSearch extends HTMLElement {
     /** @param {object} component */
     #registerSearchInput(component) {
         if (!component) throw new Error('FacetedSearch: registerSearchInput requires detail.element.');
+        if (this.#searchComponent) {
+            console.warn('FacetedSearch: Multiple search inputs registered. Only the latest will be used.');
+        }
         this.#searchComponent = component;
         this.#buildModel();
+    }
+
+    /** @param {object} component */
+    #unregisterSearchInput(component) {
+        if (this.#searchComponent === component) {
+            this.#searchComponent = null;
+        }
     }
 
     /** @param {object} component */
@@ -80,10 +99,24 @@ export default class FacetedSearch extends HTMLElement {
     }
 
     /** @param {object} component */
+    #unregisterFilterValues(component) {
+        this.#filterComponents = this.#filterComponents.filter((existing) => existing !== component);
+        this.#buildModel();
+    }
+
+    /** @param {object} component */
     #registerResultItems(component) {
         if (!component) throw new Error('FacetedSearch: registerResultItems requires detail.element.');
         this.#resultItemsComponent = component;
         this.#buildModel();
+    }
+
+    /** @param {object} component */
+    #unregisterResultItems(component) {
+        if (this.#resultItemsComponent === component) {
+            this.#resultItemsComponent = null;
+            this.#model = null;
+        }
     }
 
     /**
@@ -113,10 +146,10 @@ export default class FacetedSearch extends HTMLElement {
             orderByRelevance: this.#orderByRelevance,
         });
 
-        this.#model.on('change', () => this.#updateChildren());
-
-        // Restore any state encoded in the URL hash before rendering
+        // Restore state before attaching the change listener to avoid
+        // redundant #updateChildren calls for each restored value.
         this.#restoreFromHash();
+        this.#model.on('change', () => this.#updateChildren());
         this.#updateChildren();
     }
 
