@@ -76,6 +76,7 @@ by the TypeScript compiler and if the types are not correct, the compiler displa
 - [Async Loader](./packages/AsyncLoader/README.md)
 - [Dynamic Page Loader](./packages/DynamicPageLoader/README.md)
 - [Relative Time](./packages/RelativeTime/README.md)
+- [Faceted Search](./packages/FacetedSearch/README.md)
 
 
 ## Tools
