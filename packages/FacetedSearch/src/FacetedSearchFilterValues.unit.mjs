@@ -38,6 +38,26 @@ const filterHTML = `
     </faceted-search-filter-values>
 `;
 
+test('registers with orchestrator via event containing component reference', async (t) => {
+    const { document, errors } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = filterHTML;
+
+    const events = [];
+    container.addEventListener('registerFilterValues', (ev) => {
+        events.push(ev.detail);
+    });
+
+    document.body.appendChild(container);
+
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+    const component = document.querySelector('faceted-search-filter-values');
+    t.is(events.length, 1);
+    t.is(events[0].element, component);
+    t.is(errors.length, 0);
+});
+
 test('getFilterData returns filter name and values', async (t) => {
     const { document, errors } = await setup(true);
     const container = document.createElement('div');

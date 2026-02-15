@@ -17,6 +17,27 @@ const inputHTML = (attrs = '') => `
     </faceted-search-input>
 `;
 
+test('registers with orchestrator via event containing component reference', async (t) => {
+    const { document, errors } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = inputHTML();
+
+    const events = [];
+    container.addEventListener('registerSearchInput', (ev) => {
+        events.push(ev.detail);
+    });
+
+    document.body.appendChild(container);
+
+    // Registration is delayed via setTimeout
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+    const component = document.querySelector('faceted-search-input');
+    t.is(events.length, 1);
+    t.is(events[0].element, component);
+    t.is(errors.length, 0);
+});
+
 test('emits on Enter when live search disabled', async (t) => {
     const { document, errors, window } = await setup(true);
     const container = document.createElement('div');

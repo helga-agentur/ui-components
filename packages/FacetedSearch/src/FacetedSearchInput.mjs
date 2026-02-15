@@ -1,7 +1,7 @@
 /**
  * Web component that wraps a search input element.
  * Emits facetedSearchTermChange on Enter or on input (if live search is enabled).
- * Provides setSearchTerm() for programmatic value setting (URL restore).
+ * Provides setSearchTerm() for programmatic value setting by the orchestrator.
  */
 import { readAttribute } from '@helga-agency/ui-tools';
 import { debounce } from '@helga-agency/ui-tools';
@@ -65,8 +65,7 @@ export default class FacetedSearchInput extends HTMLElement {
     }
 
     /**
-     * Sets the input value programmatically (used by orchestrator for URL restore).
-     * Does not emit an event.
+     * Sets the input value programmatically without emitting an event.
      * @param {string} term
      */
     setSearchTerm(term) {
