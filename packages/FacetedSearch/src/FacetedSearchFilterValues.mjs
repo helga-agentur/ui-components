@@ -67,7 +67,7 @@ export default class FacetedSearchFilterValues extends HTMLElement {
         /* Delay registration so the parent orchestrator has time to set up
            its listeners, even if this component's JS loads first. */
         setTimeout(() => {
-            this.dispatchEvent(new CustomEvent('registerFilterValues', {
+            this.dispatchEvent(new CustomEvent('facetedSearchRegisterFilterValues', {
                 bubbles: true,
                 detail: { element: this },
             }));
@@ -75,7 +75,7 @@ export default class FacetedSearchFilterValues extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.dispatchEvent(new CustomEvent('unregisterFilterValues', {
+        this.dispatchEvent(new CustomEvent('facetedSearchUnregisterFilterValues', {
             bubbles: true,
             detail: { element: this },
         }));

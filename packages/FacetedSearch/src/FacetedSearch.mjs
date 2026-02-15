@@ -43,12 +43,12 @@ export default class FacetedSearch extends HTMLElement {
     }
 
     connectedCallback() {
-        this.#listenForRegistration('registerSearchInput', this.#registerSearchInput);
-        this.#listenForRegistration('registerFilterValues', this.#registerFilterValues);
+        this.#listenForRegistration('facetedSearchRegisterSearchInput', this.#registerSearchInput);
+        this.#listenForRegistration('facetedSearchRegisterFilterValues', this.#registerFilterValues);
         this.#listenForRegistration('facetedSearchRegisterResultReader', this.#registerReader);
         this.#listenForRegistration('facetedSearchRegisterResultUpdater', this.#registerUpdater);
-        this.#listenForRegistration('unregisterSearchInput', this.#unregisterSearchInput);
-        this.#listenForRegistration('unregisterFilterValues', this.#unregisterFilterValues);
+        this.#listenForRegistration('facetedSearchUnregisterSearchInput', this.#unregisterSearchInput);
+        this.#listenForRegistration('facetedSearchUnregisterFilterValues', this.#unregisterFilterValues);
         this.#listenForRegistration('facetedSearchUnregisterResultReader', this.#unregisterReader);
         this.#listenForRegistration('facetedSearchUnregisterResultUpdater', this.#unregisterUpdater);
 
