@@ -14,6 +14,7 @@ export default class FacetedSearchInput extends HTMLElement {
 
     #liveSearch;
     #debounceDelay;
+    #propagateToUrl;
 
     /** @type {HTMLInputElement|null} */
     #input = null;
@@ -25,6 +26,9 @@ export default class FacetedSearchInput extends HTMLElement {
         });
         this.#debounceDelay = readAttribute(this, 'data-debounce', {
             transform: (value) => (value !== null ? parseInt(value, 10) : defaultDebounceDelay),
+        });
+        this.#propagateToUrl = readAttribute(this, 'data-propagate-to-url', {
+            transform: (value) => value !== null,
         });
     }
 
@@ -70,5 +74,10 @@ export default class FacetedSearchInput extends HTMLElement {
      */
     setSearchTerm(term) {
         if (this.#input) this.#input.value = term;
+    }
+
+    /** @returns {boolean} */
+    get propagateToUrl() {
+        return this.#propagateToUrl;
     }
 }

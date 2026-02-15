@@ -47,7 +47,7 @@ const extractItemData = (item, { itemIdSelector, filterProperties, searchPropert
             return;
         }
         filterFields[filterName] = valueSeparator
-            ? rawValue.split(valueSeparator).map((v) => v.trim()).filter(Boolean)
+            ? rawValue.split(valueSeparator).map((part) => part.trim()).filter(Boolean)
             : [rawValue];
     });
 

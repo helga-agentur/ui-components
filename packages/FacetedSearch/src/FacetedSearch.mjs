@@ -5,7 +5,7 @@
  */
 import { readAttribute } from '@helga-agency/ui-tools';
 import FacetedSearchModel from './FacetedSearchModel.mjs';
-import { readHash } from './hashSync.mjs';
+import { readHash, writeHashKey, removeHashKey } from './hashSync.mjs';
 
 /* global HTMLElement */
 
@@ -124,6 +124,9 @@ export default class FacetedSearch extends HTMLElement {
     #handleSearchTermChange(term) {
         if (!this.#model) return;
         this.#model.setSearchTerm(term);
+        if (this.#searchComponent?.propagateToUrl) {
+            this.#writeHash('search', term ? [term] : []);
+        }
     }
 
     /**
@@ -134,6 +137,26 @@ export default class FacetedSearch extends HTMLElement {
     #handleFilterChange(name, value, selected) {
         if (!this.#model) return;
         this.#model.setFilter(name, value, selected);
+        const component = this.#filterComponents.find(
+            (filter) => filter.getFilterData().name === name,
+        );
+        if (component?.propagateToUrl) {
+            this.#writeHash(name, this.#model.activeFilters[name] || []);
+        }
+    }
+
+    /**
+     * Writes a key/values pair to the URL hash.
+     * Removes the key when values are empty.
+     * @param {string} key
+     * @param {string[]} values
+     */
+    #writeHash(key, values) {
+        const current = location.hash;
+        const updated = values.length > 0
+            ? writeHashKey(current, key, values)
+            : removeHashKey(current, key);
+        location.hash = updated;
     }
 
     /** Pushes current model state to all child components. */

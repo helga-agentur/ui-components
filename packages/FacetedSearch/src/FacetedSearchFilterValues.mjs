@@ -16,6 +16,7 @@ export default class FacetedSearchFilterValues extends HTMLElement {
     #itemIdSelector;
     #leadsToEmptyResultClass;
     #itemAmountSelector;
+    #propagateToUrl;
 
     /** @type {FilterValueItem[]} */
     #items = [];
@@ -49,6 +50,9 @@ export default class FacetedSearchFilterValues extends HTMLElement {
             this,
             'data-item-amount-selector',
         );
+        this.#propagateToUrl = readAttribute(this, 'data-propagate-to-url', {
+            transform: (value) => value !== null,
+        });
     }
 
     connectedCallback() {
@@ -117,5 +121,10 @@ export default class FacetedSearchFilterValues extends HTMLElement {
         this.#ensureCollected();
         const item = this.#items.find((entry) => entry.value === value);
         if (item) item.setChecked(selected);
+    }
+
+    /** @returns {boolean} */
+    get propagateToUrl() {
+        return this.#propagateToUrl;
     }
 }

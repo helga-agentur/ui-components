@@ -22,15 +22,23 @@ const createMockResultItems = (document, window, items = []) => {
 };
 
 /** Creates a mock filter values component that registers via event. */
-const createMockFilterValues = (name, values = []) => ({
+const createMockFilterValues = (name, values = [], { propagateToUrl = false } = {}) => ({
     getFilterData: () => ({ name, values }),
     updateExpectedResults(counts) { this.lastCounts = counts; },
     setChecked(value, selected) {
         this.checkedValues = this.checkedValues || {};
         this.checkedValues[value] = selected;
     },
+    propagateToUrl,
     lastCounts: null,
     checkedValues: {},
+});
+
+/** Creates a mock search input component. */
+const createMockSearchInput = ({ propagateToUrl = false } = {}) => ({
+    setSearchTerm(term) { this.lastTerm = term; },
+    propagateToUrl,
+    lastTerm: null,
 });
 
 /** Fires a registration event on the orchestrator. */
@@ -188,4 +196,102 @@ test('rebuilds model when filter registers after initialization', async (t) => {
 
     t.deepEqual(resultItems.lastVisibleIds, ['3']);
     t.truthy(filterCategory.lastCounts);
+});
+
+// URL hash propagation
+
+test('writes search term to URL hash when input has propagateToUrl', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const resultItems = createMockResultItems(document, window, testItems);
+    const mockInput = createMockSearchInput({ propagateToUrl: true });
+
+    fireRegistration(orchestrator, 'registerSearchInput', mockInput, window);
+    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'running' },
+    }));
+
+    t.is(window.location.hash, '#search=running');
+
+    // Clearing the term removes the key
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: '' },
+    }));
+
+    t.is(window.location.hash, '');
+    window.location.hash = '';
+});
+
+test('writes filter state to URL hash when filter has propagateToUrl', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const resultItems = createMockResultItems(document, window, testItems);
+    const filterCategory = createMockFilterValues('category', [
+        { id: 'c1', value: 'shoes' },
+        { id: 'c2', value: 'hats' },
+    ], { propagateToUrl: true });
+
+    fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
+        bubbles: true,
+        detail: { name: 'category', value: 'shoes', selected: true },
+    }));
+
+    t.is(window.location.hash, '#category=shoes');
+
+    // Adding a second value appends it
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
+        bubbles: true,
+        detail: { name: 'category', value: 'hats', selected: true },
+    }));
+
+    t.is(window.location.hash, '#category=shoes%2Chats');
+
+    // Deselecting all removes the key
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
+        bubbles: true,
+        detail: { name: 'category', value: 'shoes', selected: false },
+    }));
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
+        bubbles: true,
+        detail: { name: 'category', value: 'hats', selected: false },
+    }));
+
+    t.is(window.location.hash, '');
+    window.location.hash = '';
+});
+
+test('does not write to URL hash when propagateToUrl is false', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const resultItems = createMockResultItems(document, window, testItems);
+    const mockInput = createMockSearchInput({ propagateToUrl: false });
+
+    fireRegistration(orchestrator, 'registerSearchInput', mockInput, window);
+    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'running' },
+    }));
+
+    t.is(window.location.hash, '');
 });

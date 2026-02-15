@@ -192,7 +192,7 @@ export default class FacetedSearchModel {
                 this.#activeFilters[name].push(value);
             }
         } else {
-            this.#activeFilters[name] = this.#activeFilters[name].filter((v) => v !== value);
+            this.#activeFilters[name] = this.#activeFilters[name].filter((active) => active !== value);
         }
         this.emit('change');
     }
