@@ -11,17 +11,18 @@ const setup = async (hideErrors) => getDOM({
     hideErrors,
 });
 
-/** Creates a mock result items component that registers via event. */
-const createMockResultItems = (document, window, items = []) => {
-    const mock = {
-        getItemData: () => items,
-        updateVisibility(ids) { this.lastVisibleIds = ids; },
-        lastVisibleIds: null,
-    };
-    return mock;
-};
+/** Creates a mock reader component. */
+const createMockReader = (items = []) => ({
+    getItemData: () => items,
+});
 
-/** Creates a mock filter values component that registers via event. */
+/** Creates a mock updater component. */
+const createMockUpdater = () => ({
+    updateVisibility(ids) { this.lastVisibleIds = ids; },
+    lastVisibleIds: null,
+});
+
+/** Creates a mock filter values component. */
 const createMockFilterValues = (name, values = [], { propagateToUrl = false } = {}) => ({
     getFilterData: () => ({ name, values }),
     updateExpectedResults(counts) { this.lastCounts = counts; },
@@ -67,6 +68,15 @@ const testItems = [
     },
 ];
 
+/** Registers both reader and updater on the orchestrator. */
+const registerReaderAndUpdater = (orchestrator, window, items = testItems) => {
+    const reader = createMockReader(items);
+    const updater = createMockUpdater();
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', reader, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater, window);
+    return { reader, updater };
+};
+
 // Registration constraints
 
 test('errors on duplicate filter name', async (t) => {
@@ -76,8 +86,7 @@ test('errors on duplicate filter name', async (t) => {
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    registerReaderAndUpdater(orchestrator, window);
 
     const filter1 = createMockFilterValues('category', [{ id: 'c1', value: 'shoes' }]);
     fireRegistration(orchestrator, 'registerFilterValues', filter1, window);
@@ -96,10 +105,9 @@ test('accepts filter-values and input as optional', async (t) => {
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    const { updater } = registerReaderAndUpdater(orchestrator, window);
 
-    t.deepEqual(resultItems.lastVisibleIds, ['1', '2', '3']);
+    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
 });
 
 // Delegation via events
@@ -111,15 +119,14 @@ test('delegates search term change to model and updates children', async (t) => 
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    const { updater } = registerReaderAndUpdater(orchestrator, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
         bubbles: true,
         detail: { term: 'running' },
     }));
 
-    t.deepEqual(resultItems.lastVisibleIds, ['1']);
+    t.deepEqual(updater.lastVisibleIds, ['1']);
 });
 
 test('delegates filter change to model and updates children', async (t) => {
@@ -129,43 +136,43 @@ test('delegates filter change to model and updates children', async (t) => {
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
+    const updater = createMockUpdater();
     const filterCategory = createMockFilterValues('category', [
         { id: 'c1', value: 'shoes' },
         { id: 'c2', value: 'hats' },
     ]);
 
     fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', createMockReader(testItems), window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
         bubbles: true,
         detail: { name: 'category', value: 'shoes', selected: true },
     }));
 
-    t.deepEqual(resultItems.lastVisibleIds, ['1', '2']);
+    t.deepEqual(updater.lastVisibleIds, ['1', '2']);
     t.truthy(filterCategory.lastCounts);
 });
 
 // Initialization
 
-test('initializes model with item data from result-items', async (t) => {
+test('initializes model with item data from reader', async (t) => {
     const { document, window } = await setup(true);
     const container = document.createElement('div');
     container.innerHTML = '<faceted-search></faceted-search>';
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
     const filterCategory = createMockFilterValues('category', [
         { id: 'c1', value: 'shoes' },
         { id: 'c2', value: 'hats' },
     ]);
 
     fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    const { updater } = registerReaderAndUpdater(orchestrator, window);
 
-    t.deepEqual(resultItems.lastVisibleIds, ['1', '2', '3']);
+    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
     t.truthy(filterCategory.lastCounts);
 });
 
@@ -176,13 +183,9 @@ test('rebuilds model when filter registers after initialization', async (t) => {
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
+    const { updater } = registerReaderAndUpdater(orchestrator, window);
+    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
 
-    // Initialize with result-items only (no filters)
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
-    t.deepEqual(resultItems.lastVisibleIds, ['1', '2', '3']);
-
-    // Late-register a filter and apply it
     const filterCategory = createMockFilterValues('category', [
         { id: 'c1', value: 'shoes' },
         { id: 'c2', value: 'hats' },
@@ -194,8 +197,48 @@ test('rebuilds model when filter registers after initialization', async (t) => {
         detail: { name: 'category', value: 'hats', selected: true },
     }));
 
-    t.deepEqual(resultItems.lastVisibleIds, ['3']);
+    t.deepEqual(updater.lastVisibleIds, ['3']);
     t.truthy(filterCategory.lastCounts);
+});
+
+// Reader/updater registration order
+
+test('builds model when reader registers before updater', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const reader = createMockReader(testItems);
+    const updater = createMockUpdater();
+
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', reader, window);
+    // Model built, but no updater yet — no visibility update
+    t.is(updater.lastVisibleIds, null);
+
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater, window);
+    // Updater now registered — visibility update triggered
+    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
+});
+
+test('handles updater registering before reader', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const reader = createMockReader(testItems);
+    const updater = createMockUpdater();
+
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater, window);
+    // No model yet — no visibility update
+    t.is(updater.lastVisibleIds, null);
+
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', reader, window);
+    // Reader triggers model build, updater is present — visibility update
+    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
 });
 
 // URL hash propagation
@@ -207,11 +250,10 @@ test('writes search term to URL hash when input has propagateToUrl', async (t) =
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
     const mockInput = createMockSearchInput({ propagateToUrl: true });
 
     fireRegistration(orchestrator, 'registerSearchInput', mockInput, window);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    registerReaderAndUpdater(orchestrator, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
         bubbles: true,
@@ -220,7 +262,6 @@ test('writes search term to URL hash when input has propagateToUrl', async (t) =
 
     t.is(window.location.hash, '#search=running');
 
-    // Clearing the term removes the key
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
         bubbles: true,
         detail: { term: '' },
@@ -237,14 +278,13 @@ test('writes filter state to URL hash when filter has propagateToUrl', async (t)
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
     const filterCategory = createMockFilterValues('category', [
         { id: 'c1', value: 'shoes' },
         { id: 'c2', value: 'hats' },
     ], { propagateToUrl: true });
 
     fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    registerReaderAndUpdater(orchestrator, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
         bubbles: true,
@@ -253,7 +293,6 @@ test('writes filter state to URL hash when filter has propagateToUrl', async (t)
 
     t.is(window.location.hash, '#category=shoes');
 
-    // Adding a second value appends it
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
         bubbles: true,
         detail: { name: 'category', value: 'hats', selected: true },
@@ -261,7 +300,6 @@ test('writes filter state to URL hash when filter has propagateToUrl', async (t)
 
     t.is(window.location.hash, '#category=shoes%2Chats');
 
-    // Deselecting all removes the key
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
         bubbles: true,
         detail: { name: 'category', value: 'shoes', selected: false },
@@ -282,11 +320,10 @@ test('does not write to URL hash when propagateToUrl is false', async (t) => {
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
     const mockInput = createMockSearchInput({ propagateToUrl: false });
 
     fireRegistration(orchestrator, 'registerSearchInput', mockInput, window);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    registerReaderAndUpdater(orchestrator, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
         bubbles: true,
@@ -305,21 +342,18 @@ test('unregistering a filter component removes it from updates', async (t) => {
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
     const filterCategory = createMockFilterValues('category', [
         { id: 'c1', value: 'shoes' },
         { id: 'c2', value: 'hats' },
     ]);
 
     fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    registerReaderAndUpdater(orchestrator, window);
     t.truthy(filterCategory.lastCounts);
 
-    // Reset and unregister
     filterCategory.lastCounts = null;
     fireRegistration(orchestrator, 'unregisterFilterValues', filterCategory, window);
 
-    // Trigger an update — filter should no longer receive counts
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
         bubbles: true,
         detail: { term: 'running' },
@@ -328,27 +362,59 @@ test('unregistering a filter component removes it from updates', async (t) => {
     t.is(filterCategory.lastCounts, null);
 });
 
-test('unregistering result items clears the model', async (t) => {
+test('unregistering reader clears the model', async (t) => {
     const { document, window } = await setup(true);
     const container = document.createElement('div');
     container.innerHTML = '<faceted-search></faceted-search>';
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
-    t.deepEqual(resultItems.lastVisibleIds, ['1', '2', '3']);
+    const reader = createMockReader(testItems);
+    const updater = createMockUpdater();
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', reader, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater, window);
+    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
 
-    fireRegistration(orchestrator, 'unregisterResultItems', resultItems, window);
+    fireRegistration(orchestrator, 'facetedSearchUnregisterResultReader', reader, window);
 
-    // Search term change should be silently ignored (no model)
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
         bubbles: true,
         detail: { term: 'running' },
     }));
 
-    // lastVisibleIds should not have changed since unregister
-    t.deepEqual(resultItems.lastVisibleIds, ['1', '2', '3']);
+    // Visibility should not have changed since unregister
+    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
+});
+
+test('unregistering updater stops visibility updates but keeps model', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const reader = createMockReader(testItems);
+    const updater = createMockUpdater();
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', reader, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater, window);
+    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
+
+    fireRegistration(orchestrator, 'facetedSearchUnregisterResultUpdater', updater, window);
+
+    // Filter still works (model intact), but updater doesn't receive updates
+    updater.lastVisibleIds = null;
+    const filterCategory = createMockFilterValues('category', [
+        { id: 'c1', value: 'shoes' },
+    ]);
+    fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
+        bubbles: true,
+        detail: { name: 'category', value: 'shoes', selected: true },
+    }));
+
+    t.is(updater.lastVisibleIds, null);
+    t.truthy(filterCategory.lastCounts);
 });
 
 // Multiple search input warning
@@ -360,8 +426,7 @@ test('warns when a second search input registers', async (t) => {
     document.body.appendChild(container);
 
     const orchestrator = document.querySelector('faceted-search');
-    const resultItems = createMockResultItems(document, window, testItems);
-    fireRegistration(orchestrator, 'registerResultItems', resultItems, window);
+    registerReaderAndUpdater(orchestrator, window);
 
     const warnings = [];
     const originalWarn = console.warn;
