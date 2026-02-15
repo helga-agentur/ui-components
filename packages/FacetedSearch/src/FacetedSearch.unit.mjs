@@ -89,10 +89,10 @@ test('errors on duplicate filter name', async (t) => {
     registerReaderAndUpdater(orchestrator, window);
 
     const filter1 = createMockFilterValues('category', [{ id: 'c1', value: 'shoes' }]);
-    fireRegistration(orchestrator, 'registerFilterValues', filter1, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filter1, window);
 
     const filter2 = createMockFilterValues('category', [{ id: 'c2', value: 'hats' }]);
-    fireRegistration(orchestrator, 'registerFilterValues', filter2, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filter2, window);
 
     t.is(errors.length, 1);
     t.regex(errors[0].message, /Duplicate filter name "category"/);
@@ -142,7 +142,7 @@ test('delegates filter change to model and updates children', async (t) => {
         { id: 'c2', value: 'hats' },
     ]);
 
-    fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filterCategory, window);
     fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', createMockReader(testItems), window);
     fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater, window);
 
@@ -169,7 +169,7 @@ test('initializes model with item data from reader', async (t) => {
         { id: 'c2', value: 'hats' },
     ]);
 
-    fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filterCategory, window);
     const { updater } = registerReaderAndUpdater(orchestrator, window);
 
     t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
@@ -190,7 +190,7 @@ test('rebuilds model when filter registers after initialization', async (t) => {
         { id: 'c1', value: 'shoes' },
         { id: 'c2', value: 'hats' },
     ]);
-    fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filterCategory, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
         bubbles: true,
@@ -252,7 +252,7 @@ test('writes search term to URL hash when input has propagateToUrl', async (t) =
     const orchestrator = document.querySelector('faceted-search');
     const mockInput = createMockSearchInput({ propagateToUrl: true });
 
-    fireRegistration(orchestrator, 'registerSearchInput', mockInput, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterSearchInput', mockInput, window);
     registerReaderAndUpdater(orchestrator, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
@@ -283,7 +283,7 @@ test('writes filter state to URL hash when filter has propagateToUrl', async (t)
         { id: 'c2', value: 'hats' },
     ], { propagateToUrl: true });
 
-    fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filterCategory, window);
     registerReaderAndUpdater(orchestrator, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
@@ -322,7 +322,7 @@ test('does not write to URL hash when propagateToUrl is false', async (t) => {
     const orchestrator = document.querySelector('faceted-search');
     const mockInput = createMockSearchInput({ propagateToUrl: false });
 
-    fireRegistration(orchestrator, 'registerSearchInput', mockInput, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterSearchInput', mockInput, window);
     registerReaderAndUpdater(orchestrator, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
@@ -347,12 +347,12 @@ test('unregistering a filter component removes it from updates', async (t) => {
         { id: 'c2', value: 'hats' },
     ]);
 
-    fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filterCategory, window);
     registerReaderAndUpdater(orchestrator, window);
     t.truthy(filterCategory.lastCounts);
 
     filterCategory.lastCounts = null;
-    fireRegistration(orchestrator, 'unregisterFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'facetedSearchUnregisterFilterValues', filterCategory, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
         bubbles: true,
@@ -406,7 +406,7 @@ test('unregistering updater stops visibility updates but keeps model', async (t)
     const filterCategory = createMockFilterValues('category', [
         { id: 'c1', value: 'shoes' },
     ]);
-    fireRegistration(orchestrator, 'registerFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filterCategory, window);
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
         bubbles: true,
@@ -434,8 +434,8 @@ test('warns when a second search input registers', async (t) => {
 
     const input1 = createMockSearchInput();
     const input2 = createMockSearchInput();
-    fireRegistration(orchestrator, 'registerSearchInput', input1, window);
-    fireRegistration(orchestrator, 'registerSearchInput', input2, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterSearchInput', input1, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterSearchInput', input2, window);
 
     console.warn = originalWarn;
 

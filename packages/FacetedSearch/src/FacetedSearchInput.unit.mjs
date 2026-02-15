@@ -23,7 +23,7 @@ test('registers with orchestrator via event containing component reference', asy
     container.innerHTML = inputHTML();
 
     const events = [];
-    container.addEventListener('registerSearchInput', (ev) => {
+    container.addEventListener('facetedSearchRegisterSearchInput', (ev) => {
         events.push(ev.detail);
     });
 

@@ -44,7 +44,7 @@ test('registers with orchestrator via event containing component reference', asy
     container.innerHTML = filterHTML;
 
     const events = [];
-    container.addEventListener('registerFilterValues', (ev) => {
+    container.addEventListener('facetedSearchRegisterFilterValues', (ev) => {
         events.push(ev.detail);
     });
 

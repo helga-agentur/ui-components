@@ -54,7 +54,7 @@ export default class FacetedSearchInput extends HTMLElement {
         /* Delay registration so the parent orchestrator has time to set up
            its listeners, even if this component's JS loads first. */
         setTimeout(() => {
-            this.dispatchEvent(new CustomEvent('registerSearchInput', {
+            this.dispatchEvent(new CustomEvent('facetedSearchRegisterSearchInput', {
                 bubbles: true,
                 detail: { element: this },
             }));
@@ -62,7 +62,7 @@ export default class FacetedSearchInput extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.dispatchEvent(new CustomEvent('unregisterSearchInput', {
+        this.dispatchEvent(new CustomEvent('facetedSearchUnregisterSearchInput', {
             bubbles: true,
             detail: { element: this },
         }));
