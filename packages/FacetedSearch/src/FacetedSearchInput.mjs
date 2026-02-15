@@ -3,10 +3,9 @@
  * Emits facetedSearchTermChange on Enter or on input (if live search is enabled).
  * Provides setSearchTerm() for programmatic value setting by the orchestrator.
  */
-import { readAttribute } from '@helga-agency/ui-tools';
-import { debounce } from '@helga-agency/ui-tools';
+import { readAttribute, debounce } from '@helga-agency/ui-tools';
 
-/* global HTMLElement, CustomEvent */
+/* global HTMLElement */
 
 const defaultDebounceDelay = 0;
 

@@ -5,7 +5,7 @@
 import { readAttribute } from '@helga-agency/ui-tools';
 import { readItemAttribute } from './extractItemData.mjs';
 
-/* global HTMLElement, CustomEvent */
+/* global HTMLElement */
 
 export default class FacetedSearchResultUpdater extends HTMLElement {
 
@@ -85,10 +85,12 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
 
         const visibleSet = new Set(orderedIds);
 
-        this.#allItems.forEach((item) => {
-            const shouldShow = visibleSet.has(this.#reverseMap.get(item));
-            if (shouldShow && item.hidden) item.hidden = false;
-            else if (!shouldShow && !item.hidden) item.hidden = true;
+        this.#allItems.forEach((el) => {
+            const shouldShow = visibleSet.has(this.#reverseMap.get(el));
+            // eslint-disable-next-line no-param-reassign
+            if (shouldShow && el.hidden) el.hidden = false;
+            // eslint-disable-next-line no-param-reassign
+            else if (!shouldShow && !el.hidden) el.hidden = true;
         });
 
         const currentOrder = [...parent.children]

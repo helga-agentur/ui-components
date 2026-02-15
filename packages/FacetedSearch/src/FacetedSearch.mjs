@@ -7,7 +7,7 @@ import { readAttribute } from '@helga-agency/ui-tools';
 import FacetedSearchModel from './FacetedSearchModel.mjs';
 import { readHash, writeHashKey, removeHashKey } from './hashSync.mjs';
 
-/* global HTMLElement */
+/* global HTMLElement, window */
 
 export default class FacetedSearch extends HTMLElement {
 
@@ -44,7 +44,10 @@ export default class FacetedSearch extends HTMLElement {
 
     connectedCallback() {
         this.#listenForRegistration('facetedSearchRegisterSearchInput', this.#registerSearchInput);
-        this.#listenForRegistration('facetedSearchRegisterFilterValues', this.#registerFilterValues);
+        this.#listenForRegistration(
+            'facetedSearchRegisterFilterValues',
+            this.#registerFilterValues,
+        );
         this.#listenForRegistration('facetedSearchRegisterResultReader', this.#registerReader);
         this.#listenForRegistration('facetedSearchRegisterResultUpdater', this.#registerUpdater);
 
@@ -95,7 +98,11 @@ export default class FacetedSearch extends HTMLElement {
             console.warn('FacetedSearch: Multiple search inputs registered. Only the latest will be used.');
         }
         this.#searchComponent = component;
-        this.#listenForUnregister(component, 'facetedSearchUnregisterSearchInput', this.#unregisterSearchInput);
+        this.#listenForUnregister(
+            component,
+            'facetedSearchUnregisterSearchInput',
+            this.#unregisterSearchInput,
+        );
         this.#buildModel();
     }
 
@@ -117,13 +124,18 @@ export default class FacetedSearch extends HTMLElement {
             throw new Error(`FacetedSearch: Duplicate filter name "${data.name}".`);
         }
         this.#filterComponents.push(component);
-        this.#listenForUnregister(component, 'facetedSearchUnregisterFilterValues', this.#unregisterFilterValues);
+        this.#listenForUnregister(
+            component,
+            'facetedSearchUnregisterFilterValues',
+            this.#unregisterFilterValues,
+        );
         this.#buildModel();
     }
 
     /** @param {object} component */
     #unregisterFilterValues(component) {
-        this.#filterComponents = this.#filterComponents.filter((existing) => existing !== component);
+        this.#filterComponents = this.#filterComponents
+            .filter((existing) => existing !== component);
         this.#buildModel();
     }
 
@@ -131,7 +143,11 @@ export default class FacetedSearch extends HTMLElement {
     #registerReader(component) {
         if (!component) throw new Error('FacetedSearch: registerResultReader requires detail.element.');
         this.#readerComponent = component;
-        this.#listenForUnregister(component, 'facetedSearchUnregisterResultReader', this.#unregisterReader);
+        this.#listenForUnregister(
+            component,
+            'facetedSearchUnregisterResultReader',
+            this.#unregisterReader,
+        );
         this.#buildModel();
     }
 
@@ -147,7 +163,11 @@ export default class FacetedSearch extends HTMLElement {
     #registerUpdater(component) {
         if (!component) throw new Error('FacetedSearch: registerResultUpdater requires detail.element.');
         this.#updaterComponent = component;
-        this.#listenForUnregister(component, 'facetedSearchUnregisterResultUpdater', this.#unregisterUpdater);
+        this.#listenForUnregister(
+            component,
+            'facetedSearchUnregisterResultUpdater',
+            this.#unregisterUpdater,
+        );
         this.#updateChildren();
     }
 
@@ -224,11 +244,11 @@ export default class FacetedSearch extends HTMLElement {
      * @param {string[]} values
      */
     #writeHash(key, values) {
-        const current = location.hash;
+        const current = window.location.hash;
         const updated = values.length > 0
             ? writeHashKey(current, key, values)
             : removeHashKey(current, key);
-        location.hash = updated;
+        window.location.hash = updated;
     }
 
     /** Pushes current model state to all child components. */
@@ -252,7 +272,9 @@ export default class FacetedSearch extends HTMLElement {
 
     /** Restores state from the current URL hash. */
     #restoreFromHash() {
-        const hashData = readHash(typeof location !== 'undefined' ? location.hash : '');
+        const hashData = readHash(
+            typeof window !== 'undefined' ? window.location.hash : '',
+        );
 
         if (hashData.search) {
             const term = hashData.search[0];

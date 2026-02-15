@@ -52,7 +52,13 @@ export default class FacetedSearchModel {
      * @param {boolean} options.fuzzy - Enable fuzzy matching in MiniSearch
      * @param {boolean} options.orderByRelevance - Order by MiniSearch relevance when searching
      */
-    constructor({ items, filterConfigs = [], searchConfigs = [], fuzzy = false, orderByRelevance = false }) {
+    constructor({
+        items,
+        filterConfigs = [],
+        searchConfigs = [],
+        fuzzy = false,
+        orderByRelevance = false,
+    }) {
         Object.assign(this, canEmitEvents());
 
         this.#items = items;
@@ -195,7 +201,8 @@ export default class FacetedSearchModel {
                 this.#activeFilters[name].push(value);
             }
         } else {
-            this.#activeFilters[name] = this.#activeFilters[name].filter((active) => active !== value);
+            this.#activeFilters[name] = this.#activeFilters[name]
+                .filter((active) => active !== value);
         }
         this.emit('change');
     }

@@ -5,7 +5,7 @@
 import { readAttribute } from '@helga-agency/ui-tools';
 import { extractItemData } from './extractItemData.mjs';
 
-/* global HTMLElement, CustomEvent */
+/* global HTMLElement */
 
 export default class FacetedSearchResultReader extends HTMLElement {
 

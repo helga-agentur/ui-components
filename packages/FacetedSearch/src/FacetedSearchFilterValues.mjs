@@ -7,7 +7,7 @@
 import { readAttribute } from '@helga-agency/ui-tools';
 import FilterValueItem from './FilterValueItem.mjs';
 
-/* global HTMLElement, CustomEvent */
+/* global HTMLElement */
 
 export default class FacetedSearchFilterValues extends HTMLElement {
 
@@ -109,7 +109,9 @@ export default class FacetedSearchFilterValues extends HTMLElement {
      * @param {boolean} selected
      */
     #handleChange(value, selected) {
-        if (this.#selectOneOnly && selected && this.#activeValue !== null && this.#activeValue !== value) {
+        const shouldDeselect = this.#selectOneOnly && selected
+            && this.#activeValue !== null && this.#activeValue !== value;
+        if (shouldDeselect) {
             this.#dispatch(this.#activeValue, false);
         }
 
