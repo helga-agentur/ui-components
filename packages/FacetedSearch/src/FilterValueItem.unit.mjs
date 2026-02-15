@@ -115,6 +115,16 @@ test('handles missing input gracefully', (t) => {
     t.pass();
 });
 
+test('updateCount with null clears text and removes empty class', (t) => {
+    const el = createElement(
+        '<div data-id="cat-1" data-value="shoes" class="is-empty"><span class="count">5</span></div>',
+    );
+    const item = new FilterValueItem(el, config, noop);
+    item.updateCount(null, 'is-empty');
+    t.is(el.querySelector('.count').textContent, '');
+    t.false(el.classList.contains('is-empty'));
+});
+
 test('handles missing count element gracefully', (t) => {
     const el = createElement('<div data-id="cat-1" data-value="shoes"></div>');
     const item = new FilterValueItem(el, { ...config, amountSelector: null }, noop);

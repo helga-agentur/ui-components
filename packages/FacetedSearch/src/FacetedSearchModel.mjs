@@ -133,20 +133,18 @@ export default class FacetedSearchModel {
     }
 
     /**
-     * Builds a query object that itemsjs can execute. Merges the active (or
-     * overridden) filter state with pre-computed MiniSearch IDs so that
-     * itemsjs handles faceted filtering while MiniSearch handles full-text
-     * search. The returned object is passed directly to itemsjs.search().
-     * @param {string[]|null} searchedIds - Pre-computed MiniSearch result IDs, or null when no search is active
-     * @param {{ [filterName: string]: string[] }} [filterOverrides] - Optional filter state override for hypothetical queries
+     * Builds a query object that itemsjs can execute. Merges the active
+     * filter state with pre-computed MiniSearch IDs so that itemsjs
+     * handles faceted filtering while MiniSearch handles full-text search.
+     * @param {string[]|null} searchedIds - Pre-computed MiniSearch result
+     *     IDs, or null when no search is active
      * @returns {object} itemsjs-compatible search query
      */
-    #buildQuery(searchedIds, filterOverrides) {
-        const activeFilters = filterOverrides || this.#activeFilters;
+    #buildQuery(searchedIds) {
         const query = { per_page: 100000 };
 
         const filters = {};
-        Object.entries(activeFilters).forEach(([name, values]) => {
+        Object.entries(this.#activeFilters).forEach(([name, values]) => {
             if (values.length > 0) filters[name] = values;
         });
         if (Object.keys(filters).length > 0) query.filters = filters;
@@ -157,23 +155,34 @@ export default class FacetedSearchModel {
     }
 
     /**
-     * Runs the combined query and returns ordered visible IDs.
-     * @param {{ [filterName: string]: string[] }} [filterOverrides] - Optional filter state override
-     * @returns {string[]}
+     * Runs the combined query and returns the full itemsjs result
+     * (items + aggregations).
+     * @returns {object|null} itemsjs search result, or null when
+     *     nothing is active
      */
-    #computeVisibleIds(filterOverrides) {
+    #runQuery() {
         const searchedIds = this.#getSearchedIds();
-        const hasActiveFilters = Object.values(filterOverrides || this.#activeFilters)
+        const hasActiveFilters = Object.values(this.#activeFilters)
             .some((values) => values.length > 0);
 
-        // No search, no filters → all items in original order
-        if (searchedIds === null && !hasActiveFilters) return this.#originalOrder;
+        if (searchedIds === null && !hasActiveFilters) return null;
 
-        const query = this.#buildQuery(searchedIds, filterOverrides);
-        const result = this.#filterEngine.search(query);
+        const query = this.#buildQuery(searchedIds);
+        return this.#filterEngine.search(query);
+    }
+
+    /**
+     * Returns ordered visible IDs from the current state.
+     * @returns {string[]}
+     */
+    #computeVisibleIds() {
+        const result = this.#runQuery();
+        if (!result) return this.#originalOrder;
+
         const resultIds = result.data.items.map((item) => item.id);
 
         // When searching with relevance ordering, preserve MiniSearch's order
+        const searchedIds = this.#getSearchedIds();
         if (searchedIds !== null && this.#orderByRelevance) {
             const resultSet = new Set(resultIds);
             return searchedIds.filter((id) => resultSet.has(id));
@@ -216,29 +225,33 @@ export default class FacetedSearchModel {
     }
 
     /**
-     * Computes expected result counts for each value in a given filter.
-     * For each value, temporarily adds it to the filter state and counts results.
+     * Returns expected result counts for each value in a given filter,
+     * using itemsjs aggregation buckets. Active (selected) values
+     * return null since their count is not meaningful while selected.
      * @param {string} filterName
-     * @param {Array<{ id: string, value: string }>} filterValues - All values of this filter
-     * @returns {{ [valueId: string]: number }}
+     * @param {Array<{ id: string, value: string }>} filterValues
+     * @returns {{ [valueId: string]: number|null }}
      */
     getExpectedResults(filterName, filterValues) {
+        const result = this.#runQuery();
+        const aggregations = result
+            ? result.data.aggregations
+            : this.#filterEngine.search({ per_page: 0 })
+                .data.aggregations;
+
+        const buckets = aggregations[filterName]?.buckets || [];
+        const bucketMap = new Map(
+            buckets.map((bucket) => [bucket.key, bucket.doc_count]),
+        );
+
+        const activeValues = this.#activeFilters[filterName] || [];
         const counts = {};
-        const currentFilterState = this.#activeFilters[filterName] || [];
-
         filterValues.forEach(({ id, value }) => {
-            const isActive = currentFilterState.includes(value);
-            const tempFilters = { ...this.#activeFilters };
-
-            if (isActive) {
-                // Show count if this value were removed
-                tempFilters[filterName] = currentFilterState.filter((active) => active !== value);
+            if (activeValues.includes(value)) {
+                counts[id] = null;
             } else {
-                // Show count if this value were added
-                tempFilters[filterName] = [...currentFilterState, value];
+                counts[id] = bucketMap.get(value) || 0;
             }
-
-            counts[id] = this.#computeVisibleIds(tempFilters).length;
         });
 
         return counts;

@@ -55,10 +55,17 @@ export default class FilterValueItem {
 
     /**
      * Updates the displayed count and toggles the empty-result class.
-     * @param {number} count
+     * When count is null (value is currently active), the count display
+     * is cleared and the empty class is removed.
+     * @param {number|null} count
      * @param {string|null} emptyClass - CSS class to apply when count is 0
      */
     updateCount(count, emptyClass) {
+        if (count === null) {
+            if (this.#countElement) this.#countElement.textContent = '';
+            if (emptyClass) this.#element.classList.remove(emptyClass);
+            return;
+        }
         if (this.#countElement) this.#countElement.textContent = String(count);
         if (emptyClass) this.#element.classList.toggle(emptyClass, count === 0);
     }
