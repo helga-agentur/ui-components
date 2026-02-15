@@ -17,8 +17,11 @@ export default class FacetedSearch extends HTMLElement {
     /** @type {object[]} FacetedSearchFilterValues components */
     #filterComponents = [];
 
-    /** @type {object|null} FacetedSearchResultItems component */
-    #resultItemsComponent = null;
+    /** @type {object|null} FacetedSearchResultReader component */
+    #readerComponent = null;
+
+    /** @type {object|null} FacetedSearchResultUpdater component */
+    #updaterComponent = null;
 
     /** @type {FacetedSearchModel|null} */
     #model = null;
@@ -40,30 +43,33 @@ export default class FacetedSearch extends HTMLElement {
     }
 
     connectedCallback() {
-        this.addEventListener('registerSearchInput', (ev) => {
-            this.#registerSearchInput(ev.detail?.element);
-        });
-        this.addEventListener('unregisterSearchInput', (ev) => {
-            this.#unregisterSearchInput(ev.detail?.element);
-        });
-        this.addEventListener('registerFilterValues', (ev) => {
-            this.#registerFilterValues(ev.detail?.element);
-        });
-        this.addEventListener('unregisterFilterValues', (ev) => {
-            this.#unregisterFilterValues(ev.detail?.element);
-        });
-        this.addEventListener('registerResultItems', (ev) => {
-            this.#registerResultItems(ev.detail?.element);
-        });
-        this.addEventListener('unregisterResultItems', (ev) => {
-            this.#unregisterResultItems(ev.detail?.element);
-        });
+        this.#listenForRegistration('registerSearchInput', this.#registerSearchInput);
+        this.#listenForRegistration('registerFilterValues', this.#registerFilterValues);
+        this.#listenForRegistration('facetedSearchRegisterResultReader', this.#registerReader);
+        this.#listenForRegistration('facetedSearchRegisterResultUpdater', this.#registerUpdater);
+        this.#listenForRegistration('unregisterSearchInput', this.#unregisterSearchInput);
+        this.#listenForRegistration('unregisterFilterValues', this.#unregisterFilterValues);
+        this.#listenForRegistration('facetedSearchUnregisterResultReader', this.#unregisterReader);
+        this.#listenForRegistration('facetedSearchUnregisterResultUpdater', this.#unregisterUpdater);
+
         this.addEventListener('facetedSearchTermChange', (ev) => {
             this.#handleSearchTermChange(ev.detail.term);
         });
         this.addEventListener('facetedSearchFilterChange', (ev) => {
             const { name, value, selected } = ev.detail;
             this.#handleFilterChange(name, value, selected);
+        });
+    }
+
+    /**
+     * Registers a listener for a child registration/unregistration event,
+     * extracting the component reference from `detail.element`.
+     * @param {string} eventName
+     * @param {Function} handler
+     */
+    #listenForRegistration(eventName, handler) {
+        this.addEventListener(eventName, (ev) => {
+            handler.call(this, ev.detail?.element);
         });
     }
 
@@ -105,30 +111,44 @@ export default class FacetedSearch extends HTMLElement {
     }
 
     /** @param {object} component */
-    #registerResultItems(component) {
-        if (!component) throw new Error('FacetedSearch: registerResultItems requires detail.element.');
-        this.#resultItemsComponent = component;
+    #registerReader(component) {
+        if (!component) throw new Error('FacetedSearch: registerResultReader requires detail.element.');
+        this.#readerComponent = component;
         this.#buildModel();
     }
 
     /** @param {object} component */
-    #unregisterResultItems(component) {
-        if (this.#resultItemsComponent === component) {
-            this.#resultItemsComponent = null;
+    #unregisterReader(component) {
+        if (this.#readerComponent === component) {
+            this.#readerComponent = null;
             this.#model = null;
+        }
+    }
+
+    /** @param {object} component */
+    #registerUpdater(component) {
+        if (!component) throw new Error('FacetedSearch: registerResultUpdater requires detail.element.');
+        this.#updaterComponent = component;
+        this.#updateChildren();
+    }
+
+    /** @param {object} component */
+    #unregisterUpdater(component) {
+        if (this.#updaterComponent === component) {
+            this.#updaterComponent = null;
         }
     }
 
     /**
      * (Re)builds the model from the currently registered components.
-     * Called after every child registration; requires result-items to be
+     * Called after every child registration; requires the reader to be
      * present, search input and filters are optional. Rebuilds the model
      * each time so that late-registering components are included.
      */
     #buildModel() {
-        if (!this.#resultItemsComponent) return;
+        if (!this.#readerComponent) return;
 
-        const items = this.#resultItemsComponent.getItemData();
+        const items = this.#readerComponent.getItemData();
 
         // Derive filter and search configs from the collected item data
         const filterConfigs = this.#filterComponents.map(
@@ -194,8 +214,12 @@ export default class FacetedSearch extends HTMLElement {
 
     /** Pushes current model state to all child components. */
     #updateChildren() {
-        const visibleIds = this.#model.getVisibleIds();
-        this.#resultItemsComponent.updateVisibility(visibleIds);
+        if (!this.#model) return;
+
+        if (this.#updaterComponent) {
+            const visibleIds = this.#model.getVisibleIds();
+            this.#updaterComponent.updateVisibility(visibleIds);
+        }
 
         this.#filterComponents.forEach((component) => {
             const filterData = component.getFilterData();

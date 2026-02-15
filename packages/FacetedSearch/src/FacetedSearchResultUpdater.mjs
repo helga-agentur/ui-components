@@ -1,14 +1,13 @@
 /**
- * Web component that wraps server-rendered result items.
- * Reads item data from the DOM for indexing and provides updateVisibility()
- * to show/hide/reorder items based on faceted search results.
+ * Web component that receives ordered visible IDs from the orchestrator
+ * and updates the DOM accordingly. No data extraction logic.
  */
 import { readAttribute } from '@helga-agency/ui-tools';
-import { extractItemData, readItemAttribute } from './extractItemData.mjs';
+import { readItemAttribute } from './extractItemData.mjs';
 
 /* global HTMLElement, CustomEvent */
 
-export default class FacetedSearchResultItems extends HTMLElement {
+export default class FacetedSearchResultUpdater extends HTMLElement {
 
     /** @type {HTMLElement[]} all item elements in original DOM order */
     #allItems = [];
@@ -24,8 +23,6 @@ export default class FacetedSearchResultItems extends HTMLElement {
 
     #itemSelector;
     #itemIdSelector;
-    #filterProperties;
-    #searchProperties;
     #emptyResultsSelector;
     #resultsSelector;
 
@@ -39,21 +36,13 @@ export default class FacetedSearchResultItems extends HTMLElement {
             validate: (value) => !!value,
             expectation: 'a non-empty attribute selector string',
         });
-        this.#filterProperties = readAttribute(this, 'data-filter-properties', {
-            transform: (value) => (value ? JSON.parse(value) : []),
-        });
-        this.#searchProperties = readAttribute(this, 'data-search-properties', {
-            transform: (value) => (value ? JSON.parse(value) : []),
-        });
         this.#emptyResultsSelector = readAttribute(this, 'data-empty-results-selector');
         this.#resultsSelector = readAttribute(this, 'data-results-selector');
     }
 
     connectedCallback() {
-        /* Delay registration so the parent orchestrator has time to set up
-           its listeners, even if this component's JS loads first. */
         setTimeout(() => {
-            this.dispatchEvent(new CustomEvent('registerResultItems', {
+            this.dispatchEvent(new CustomEvent('facetedSearchRegisterResultUpdater', {
                 bubbles: true,
                 detail: { element: this },
             }));
@@ -61,16 +50,13 @@ export default class FacetedSearchResultItems extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.dispatchEvent(new CustomEvent('unregisterResultItems', {
+        this.dispatchEvent(new CustomEvent('facetedSearchUnregisterResultUpdater', {
             bubbles: true,
             detail: { element: this },
         }));
     }
 
-    /**
-     * Lazily collects items from the DOM on first access.
-     * Deferred because children may not be available in connectedCallback.
-     */
+    /** Lazily collects items and builds lookup maps on first access. */
     #ensureCollected() {
         if (this.#isCollected) return;
         this.#isCollected = true;
@@ -83,23 +69,6 @@ export default class FacetedSearchResultItems extends HTMLElement {
                 this.#reverseMap.set(item, id);
             }
         });
-    }
-
-    /**
-     * Returns item data for building search/filter indexes.
-     * Called by the orchestrator during initialization.
-     * @returns {Array<{ id: string, filterFields: object, searchFields: object }>}
-     */
-    getItemData() {
-        this.#ensureCollected();
-        const config = {
-            itemIdSelector: this.#itemIdSelector,
-            filterProperties: this.#filterProperties,
-            searchProperties: this.#searchProperties,
-        };
-        return this.#allItems
-            .map((item) => extractItemData(item, config))
-            .filter((item) => item.id);
     }
 
     /**
@@ -116,20 +85,18 @@ export default class FacetedSearchResultItems extends HTMLElement {
 
         const visibleSet = new Set(orderedIds);
 
-        // Only toggle hidden on items whose visibility actually changes
         this.#allItems.forEach((item) => {
             const shouldShow = visibleSet.has(this.#reverseMap.get(item));
             if (shouldShow && item.hidden) item.hidden = false;
             else if (!shouldShow && !item.hidden) item.hidden = true;
         });
 
-        // Only reorder if the current DOM order of visible items differs
         const currentOrder = [...parent.children]
             .filter((el) => !el.hidden)
             .map((el) => this.#reverseMap.get(el));
 
         const needsReorder = orderedIds.length !== currentOrder.length
-            || orderedIds.some((id, i) => id !== currentOrder[i]);
+            || orderedIds.some((id, index) => id !== currentOrder[index]);
 
         if (needsReorder) {
             orderedIds.forEach((id) => {
@@ -143,8 +110,7 @@ export default class FacetedSearchResultItems extends HTMLElement {
 
     /**
      * Shows or hides the "no results" message and the results wrapper.
-     * Only toggles when both selectors are configured; with just one,
-     * we could not reliably revert to the original state.
+     * Only toggles when both selectors are configured.
      * @param {boolean} hasResults
      */
     #toggleEmptyState(hasResults) {
