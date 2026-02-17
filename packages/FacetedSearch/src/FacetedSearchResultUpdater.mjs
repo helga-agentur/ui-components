@@ -72,12 +72,11 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
     }
 
     /**
-     * Shows/hides items and reorders DOM nodes to match the given ID order.
-     * Minimizes DOM mutations: only toggles display when it changes, only
-     * reorders when the visible sequence actually differs.
+     * Receives the current visible IDs from the orchestrator.
+     * Shows/hides items and reorders DOM nodes to match the given order.
      * @param {string[]} orderedIds
      */
-    updateVisibility(orderedIds) {
+    updateResults(orderedIds) {
         this.#ensureCollected();
 
         const parent = this.#allItems[0]?.parentNode;

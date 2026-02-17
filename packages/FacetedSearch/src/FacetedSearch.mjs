@@ -20,8 +20,8 @@ export default class FacetedSearch extends HTMLElement {
     /** @type {object|null} FacetedSearchResultReader component */
     #readerComponent = null;
 
-    /** @type {object|null} FacetedSearchResultUpdater component */
-    #updaterComponent = null;
+    /** @type {object[]} Updater components (e.g. result-updater, results-amount) */
+    #updaterComponents = [];
 
     /** @type {FacetedSearchModel|null} */
     #model = null;
@@ -162,7 +162,7 @@ export default class FacetedSearch extends HTMLElement {
     /** @param {object} component */
     #registerUpdater(component) {
         if (!component) throw new Error('FacetedSearch: registerResultUpdater requires detail.element.');
-        this.#updaterComponent = component;
+        this.#updaterComponents.push(component);
         this.#listenForUnregister(
             component,
             'facetedSearchUnregisterResultUpdater',
@@ -173,9 +173,8 @@ export default class FacetedSearch extends HTMLElement {
 
     /** @param {object} component */
     #unregisterUpdater(component) {
-        if (this.#updaterComponent === component) {
-            this.#updaterComponent = null;
-        }
+        this.#updaterComponents = this.#updaterComponents
+            .filter((existing) => existing !== component);
     }
 
     /**
@@ -255,10 +254,10 @@ export default class FacetedSearch extends HTMLElement {
     #updateChildren() {
         if (!this.#model) return;
 
-        if (this.#updaterComponent) {
-            const visibleIds = this.#model.getVisibleIds();
-            this.#updaterComponent.updateVisibility(visibleIds);
-        }
+        const visibleIds = this.#model.getVisibleIds();
+        this.#updaterComponents.forEach((component) => {
+            component.updateResults(visibleIds);
+        });
 
         this.#filterComponents.forEach((component) => {
             const filterData = component.getFilterData();
