@@ -14,6 +14,13 @@ const extractAttributeName = (selector) => {
 };
 
 /**
+ * Returns true if the selector ends with an attribute selector (e.g. '[data-id]').
+ * @param {string} selector
+ * @returns {boolean}
+ */
+const isAttributeSelector = (selector) => selector.trimEnd().endsWith(']');
+
+/**
  * Reads an attribute value from an element. If the element itself matches
  * the attribute selector, reads from it directly; otherwise queries a child.
  * @param {HTMLElement} element
@@ -25,6 +32,19 @@ const readItemAttribute = (element, selector) => {
     if (element.matches(selector)) return element.getAttribute(attributeName);
     const child = element.querySelector(selector);
     return child ? child.getAttribute(attributeName) : null;
+};
+
+/**
+ * Reads a value from an element: attribute value for attribute selectors,
+ * trimmed textContent for element selectors.
+ * @param {HTMLElement} element
+ * @param {string} selector
+ * @returns {string|null}
+ */
+const readItemValue = (element, selector) => {
+    if (isAttributeSelector(selector)) return readItemAttribute(element, selector);
+    const target = element.matches(selector) ? element : element.querySelector(selector);
+    return target ? target.textContent.trim() : null;
 };
 
 /**
@@ -54,11 +74,17 @@ const extractItemData = (item, { itemIdSelector, filterProperties, searchPropert
     const searchFields = {};
     searchProperties.forEach(({ fieldIDSelector }) => {
         const fieldName = extractAttributeName(fieldIDSelector);
-        const rawValue = readItemAttribute(item, fieldIDSelector);
+        const rawValue = readItemValue(item, fieldIDSelector);
         searchFields[fieldName] = rawValue || '';
     });
 
     return { id, filterFields, searchFields };
 };
 
-export { extractItemData, readItemAttribute, extractAttributeName };
+export {
+    extractItemData,
+    readItemAttribute,
+    readItemValue,
+    extractAttributeName,
+    isAttributeSelector,
+};

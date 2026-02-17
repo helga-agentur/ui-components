@@ -1,6 +1,8 @@
 import test from 'ava';
 import { JSDOM } from 'jsdom';
-import { extractItemData, readItemAttribute, extractAttributeName } from './extractItemData.mjs';
+import {
+    extractItemData, readItemAttribute, readItemValue, extractAttributeName, isAttributeSelector,
+} from './extractItemData.mjs';
 
 const createItem = (html) => {
     const { document } = new JSDOM(html).window;
@@ -90,4 +92,85 @@ test('returns null id when id attribute is missing', (t) => {
         searchProperties: [],
     });
     t.is(result.id, null);
+});
+
+// isAttributeSelector
+
+test('detects attribute selectors', (t) => {
+    t.true(isAttributeSelector('[data-id]'));
+    t.true(isAttributeSelector('.name[data-x]'));
+    t.false(isAttributeSelector('.name'));
+    t.false(isAttributeSelector('h3'));
+});
+
+// readItemValue
+
+test('reads attribute value for attribute selectors', (t) => {
+    const item = createItem('<div data-name="Red Shoe"></div>');
+    t.is(readItemValue(item, '[data-name]'), 'Red Shoe');
+});
+
+test('reads textContent for element selectors on child', (t) => {
+    const item = createItem('<div><span class="name">Red Shoe</span></div>');
+    t.is(readItemValue(item, '.name'), 'Red Shoe');
+});
+
+test('reads textContent for element selectors on item itself', (t) => {
+    const item = createItem('<div class="name">Red Shoe</div>');
+    t.is(readItemValue(item, '.name'), 'Red Shoe');
+});
+
+test('trims textContent whitespace', (t) => {
+    const item = createItem('<div><span class="name">  Red Shoe  </span></div>');
+    t.is(readItemValue(item, '.name'), 'Red Shoe');
+});
+
+test('returns null for element selector when no match', (t) => {
+    const item = createItem('<div></div>');
+    t.is(readItemValue(item, '.name'), null);
+});
+
+test('flattens nested HTML in textContent', (t) => {
+    const item = createItem('<div><span class="name"><em>Red</em> Shoe</span></div>');
+    t.is(readItemValue(item, '.name'), 'Red Shoe');
+});
+
+// extractItemData with element selectors
+
+test('uses textContent for search properties with element selectors', (t) => {
+    const item = createItem(
+        '<div data-id="1"><span class="name">Red Shoe</span></div>',
+    );
+    const result = extractItemData(item, {
+        itemIdSelector: '[data-id]',
+        filterProperties: [],
+        searchProperties: [{ fieldIDSelector: '.name' }],
+    });
+    t.is(result.searchFields['.name'], 'Red Shoe');
+});
+
+test('mixes attribute and element selectors in search properties', (t) => {
+    const item = createItem(
+        '<div data-id="1" data-sku="ABC"><span class="name">Red Shoe</span></div>',
+    );
+    const result = extractItemData(item, {
+        itemIdSelector: '[data-id]',
+        filterProperties: [],
+        searchProperties: [
+            { fieldIDSelector: '[data-sku]' },
+            { fieldIDSelector: '.name' },
+        ],
+    });
+    t.is(result.searchFields['data-sku'], 'ABC');
+    t.is(result.searchFields['.name'], 'Red Shoe');
+});
+
+test('returns empty string for element selector with empty content', (t) => {
+    const item = createItem('<div data-id="1"><span class="name">   </span></div>');
+    const result = extractItemData(item, {
+        itemIdSelector: '[data-id]',
+        filterProperties: [],
+        searchProperties: [{ fieldIDSelector: '.name' }],
+    });
+    t.is(result.searchFields['.name'], '');
 });
