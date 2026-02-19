@@ -14,6 +14,14 @@ const createItem = (html) => {
 test('extracts attribute name from bracket selector', (t) => {
     t.is(extractAttributeName('[data-id]'), 'data-id');
     t.is(extractAttributeName('[data-category]'), 'data-category');
+    // Compound selectors — extracts from the last [...] on the last element
+    t.is(extractAttributeName('div[data-id]'), 'data-id');
+    t.is(extractAttributeName('[data-id].class'), 'data-id');
+    t.is(extractAttributeName('[data-foo][data-id]'), 'data-id');
+    // Attribute selectors with values — extracts only the name, not the value
+    t.is(extractAttributeName('[data-id="foo"]'), 'data-id');
+    t.is(extractAttributeName('[data-id~="foo"]'), 'data-id');
+    t.is(extractAttributeName('[data-id^="foo"]'), 'data-id');
 });
 
 test('returns selector as-is if no brackets', (t) => {
@@ -97,8 +105,21 @@ test('returns null id when id attribute is missing', (t) => {
 // isAttributeSelector
 
 test('detects attribute selectors', (t) => {
+    // Simple attribute selector
     t.true(isAttributeSelector('[data-id]'));
+    // Attribute selector preceded by type or class (compound, same element)
     t.true(isAttributeSelector('.name[data-x]'));
+    t.true(isAttributeSelector('div[data-id]'));
+    // Attribute selector followed by compound simple selectors (same element)
+    t.true(isAttributeSelector('[data-id].class'));
+    t.true(isAttributeSelector('[data-id]#id:hover::before'));
+    // Combinators after attribute selector introduce a new element — not valid
+    t.false(isAttributeSelector('[data-id]>.child'));
+    t.false(isAttributeSelector('[data-id] .child'));
+    t.false(isAttributeSelector('[data-id]+.sibling'));
+    t.false(isAttributeSelector('[data-id]~.sibling'));
+    t.false(isAttributeSelector('[data-id]|col'));
+    // Non-attribute selectors
     t.false(isAttributeSelector('.name'));
     t.false(isAttributeSelector('h3'));
 });
