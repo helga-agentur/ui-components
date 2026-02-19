@@ -1,0 +1,3 @@
+[submodule ".ai-boilerplate"]
+	path = .ai-boilerplate
+	url = git@github.com:helga-agentur/ai-boilerplate.git
