@@ -46,14 +46,14 @@ test('registers with orchestrator via facetedSearchRegisterResultUpdater event',
     t.is(errors.length, 0);
 });
 
-test('updateVisibility shows matching items and hides others', async (t) => {
+test('updateResults shows matching items and hides others', async (t) => {
     const { document, errors } = await setup(true);
     const container = document.createElement('div');
     container.innerHTML = updaterHTML;
     document.body.appendChild(container);
 
     const component = document.querySelector('faceted-search-result-updater');
-    component.updateVisibility(['1', '3']);
+    component.updateResults(['1', '3']);
 
     const item1 = document.querySelector('[data-id="1"]');
     const item2 = document.querySelector('[data-id="2"]');
@@ -64,14 +64,14 @@ test('updateVisibility shows matching items and hides others', async (t) => {
     t.is(errors.length, 0);
 });
 
-test('updateVisibility reorders DOM nodes', async (t) => {
+test('updateResults reorders DOM nodes', async (t) => {
     const { document, errors } = await setup(true);
     const container = document.createElement('div');
     container.innerHTML = updaterHTML;
     document.body.appendChild(container);
 
     const component = document.querySelector('faceted-search-result-updater');
-    component.updateVisibility(['3', '1']);
+    component.updateResults(['3', '1']);
 
     const visibleItems = [...document.querySelectorAll('.result-item')]
         .filter((el) => !el.hidden);
@@ -89,7 +89,7 @@ test('shows empty message when no results', async (t) => {
     document.body.appendChild(container);
 
     const component = document.querySelector('faceted-search-result-updater');
-    component.updateVisibility([]);
+    component.updateResults([]);
 
     const emptyMessage = document.querySelector('.no-results');
     t.false(emptyMessage.hidden);
@@ -103,7 +103,7 @@ test('hides results wrapper when empty', async (t) => {
     document.body.appendChild(container);
 
     const component = document.querySelector('faceted-search-result-updater');
-    component.updateVisibility([]);
+    component.updateResults([]);
 
     const resultsWrapper = document.querySelector('.results-wrapper');
     t.true(resultsWrapper.hidden);
@@ -117,8 +117,8 @@ test('restores results wrapper when results appear', async (t) => {
     document.body.appendChild(container);
 
     const component = document.querySelector('faceted-search-result-updater');
-    component.updateVisibility([]);
-    component.updateVisibility(['1']);
+    component.updateResults([]);
+    component.updateResults(['1']);
 
     const resultsWrapper = document.querySelector('.results-wrapper');
     t.false(resultsWrapper.hidden);

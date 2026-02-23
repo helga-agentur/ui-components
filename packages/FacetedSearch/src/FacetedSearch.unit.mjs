@@ -18,7 +18,7 @@ const createMockReader = (items = []) => ({
 
 /** Creates a mock updater component. */
 const createMockUpdater = () => ({
-    updateVisibility(ids) { this.lastVisibleIds = ids; },
+    updateResults(ids) { this.lastVisibleIds = ids; },
     lastVisibleIds: null,
 });
 
@@ -415,6 +415,62 @@ test('unregistering updater stops visibility updates but keeps model', async (t)
 
     t.is(updater.lastVisibleIds, null);
     t.truthy(filterCategory.lastCounts);
+});
+
+// Multiple updaters
+
+test('multiple updaters all receive updateResults calls', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const reader = createMockReader(testItems);
+    const updater1 = createMockUpdater();
+    const updater2 = createMockUpdater();
+
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', reader, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater1, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater2, window);
+
+    t.deepEqual(updater1.lastVisibleIds, ['1', '2', '3']);
+    t.deepEqual(updater2.lastVisibleIds, ['1', '2', '3']);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'running' },
+    }));
+
+    t.deepEqual(updater1.lastVisibleIds, ['1']);
+    t.deepEqual(updater2.lastVisibleIds, ['1']);
+});
+
+test('unregistering one updater does not affect the other', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const reader = createMockReader(testItems);
+    const updater1 = createMockUpdater();
+    const updater2 = createMockUpdater();
+
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', reader, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater1, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater2, window);
+
+    fireRegistration(orchestrator, 'facetedSearchUnregisterResultUpdater', updater1, window);
+    updater1.lastVisibleIds = null;
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'running' },
+    }));
+
+    t.is(updater1.lastVisibleIds, null);
+    t.deepEqual(updater2.lastVisibleIds, ['1']);
 });
 
 // Multiple search input warning
