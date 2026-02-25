@@ -11,6 +11,18 @@ const setup = async (hideErrors) => getDOM({
     hideErrors,
 });
 
+test('defineElement registers the custom element', async (t) => {
+    const { window } = await setup();
+    t.truthy(window.customElements.get('faceted-search-result-reader'));
+});
+
+test('defineElement is idempotent', async (t) => {
+    const { window } = await setup();
+    const FacetedSearchResultReader = window.customElements.get('faceted-search-result-reader');
+    t.notThrows(() => FacetedSearchResultReader.defineElement());
+    t.is(window.customElements.get('faceted-search-result-reader'), FacetedSearchResultReader);
+});
+
 const readerHTML = `
     <faceted-search-result-reader
         data-item-selector=".result-item"

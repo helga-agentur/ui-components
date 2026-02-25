@@ -291,4 +291,10 @@ export default class FacetedSearch extends HTMLElement {
             });
         });
     }
+
+    static defineElement() {
+        if (!window.customElements.get('faceted-search')) {
+            window.customElements.define('faceted-search', FacetedSearch);
+        }
+    }
 }

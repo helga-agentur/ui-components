@@ -11,6 +11,19 @@ const setup = async (hideErrors) => getDOM({
     hideErrors,
 });
 
+test('defineElement registers the custom element', async (t) => {
+    const { window } = await setup();
+    t.truthy(window.customElements.get('faceted-search'));
+});
+
+test('defineElement is idempotent', async (t) => {
+    const { window } = await setup();
+    const FacetedSearch = window.customElements.get('faceted-search');
+    // Calling defineElement again must not throw
+    t.notThrows(() => FacetedSearch.defineElement());
+    t.is(window.customElements.get('faceted-search'), FacetedSearch);
+});
+
 /** Creates a mock reader component. */
 const createMockReader = (items = []) => ({
     getItemData: () => items,

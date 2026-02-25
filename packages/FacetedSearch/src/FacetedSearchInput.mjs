@@ -5,7 +5,7 @@
  */
 import { readAttribute, debounce } from '@helga-agency/ui-tools';
 
-/* global HTMLElement */
+/* global HTMLElement, window */
 
 const defaultDebounceDelay = 0;
 
@@ -85,5 +85,11 @@ export default class FacetedSearchInput extends HTMLElement {
     /** @returns {boolean} */
     get propagateToUrl() {
         return this.#propagateToUrl;
+    }
+
+    static defineElement() {
+        if (!window.customElements.get('faceted-search-input')) {
+            window.customElements.define('faceted-search-input', FacetedSearchInput);
+        }
     }
 }

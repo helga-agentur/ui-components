@@ -5,7 +5,7 @@
 import { readAttribute } from '@helga-agency/ui-tools';
 import { extractItemData } from './extractItemData.mjs';
 
-/* global HTMLElement */
+/* global HTMLElement, window */
 
 export default class FacetedSearchResultReader extends HTMLElement {
 
@@ -75,5 +75,11 @@ export default class FacetedSearchResultReader extends HTMLElement {
         return this.#allItems
             .map((item) => extractItemData(item, config))
             .filter((item) => item.id);
+    }
+
+    static defineElement() {
+        if (!window.customElements.get('faceted-search-result-reader')) {
+            window.customElements.define('faceted-search-result-reader', FacetedSearchResultReader);
+        }
     }
 }

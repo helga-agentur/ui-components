@@ -7,7 +7,7 @@
 import { readAttribute } from '@helga-agency/ui-tools';
 import FilterValueItem from './FilterValueItem.mjs';
 
-/* global HTMLElement */
+/* global HTMLElement, window */
 
 export default class FacetedSearchFilterValues extends HTMLElement {
 
@@ -177,5 +177,11 @@ export default class FacetedSearchFilterValues extends HTMLElement {
     /** @returns {boolean} */
     get propagateToUrl() {
         return this.#propagateToUrl;
+    }
+
+    static defineElement() {
+        if (!window.customElements.get('faceted-search-filter-values')) {
+            window.customElements.define('faceted-search-filter-values', FacetedSearchFilterValues);
+        }
     }
 }

@@ -11,6 +11,18 @@ const setup = async (hideErrors) => getDOM({
     hideErrors,
 });
 
+test('defineElement registers the custom element', async (t) => {
+    const { window } = await setup();
+    t.truthy(window.customElements.get('faceted-search-filter-values'));
+});
+
+test('defineElement is idempotent', async (t) => {
+    const { window } = await setup();
+    const FacetedSearchFilterValues = window.customElements.get('faceted-search-filter-values');
+    t.notThrows(() => FacetedSearchFilterValues.defineElement());
+    t.is(window.customElements.get('faceted-search-filter-values'), FacetedSearchFilterValues);
+});
+
 const filterHTML = `
     <faceted-search-filter-values
         data-filter-name="category"

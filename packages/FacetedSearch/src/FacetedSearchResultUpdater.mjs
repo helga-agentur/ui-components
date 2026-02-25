@@ -5,7 +5,7 @@
 import { readAttribute } from '@helga-agency/ui-tools';
 import { readItemAttribute } from './extractItemData.mjs';
 
-/* global HTMLElement */
+/* global HTMLElement, window */
 
 export default class FacetedSearchResultUpdater extends HTMLElement {
 
@@ -121,5 +121,11 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
         const resultsEl = this.querySelector(this.#resultsSelector);
         if (emptyEl) emptyEl.hidden = hasResults;
         if (resultsEl) resultsEl.hidden = !hasResults;
+    }
+
+    static defineElement() {
+        if (!window.customElements.get('faceted-search-result-updater')) {
+            window.customElements.define('faceted-search-result-updater', FacetedSearchResultUpdater);
+        }
     }
 }

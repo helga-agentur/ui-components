@@ -11,6 +11,18 @@ const setup = async (hideErrors) => getDOM({
     hideErrors,
 });
 
+test('defineElement registers the custom element', async (t) => {
+    const { window } = await setup();
+    t.truthy(window.customElements.get('faceted-search-input'));
+});
+
+test('defineElement is idempotent', async (t) => {
+    const { window } = await setup();
+    const FacetedSearchInput = window.customElements.get('faceted-search-input');
+    t.notThrows(() => FacetedSearchInput.defineElement());
+    t.is(window.customElements.get('faceted-search-input'), FacetedSearchInput);
+});
+
 const inputHTML = (attrs = '') => `
     <faceted-search-input ${attrs}>
         <input type="text" />

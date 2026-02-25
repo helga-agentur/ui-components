@@ -4,7 +4,7 @@
  */
 import { readAttribute } from '@helga-agency/ui-tools';
 
-/* global HTMLElement */
+/* global HTMLElement, window */
 
 export default class FacetedSearchResultsAmount extends HTMLElement {
 
@@ -46,5 +46,11 @@ export default class FacetedSearchResultsAmount extends HTMLElement {
             return;
         }
         target.textContent = orderedIds.length;
+    }
+
+    static defineElement() {
+        if (!window.customElements.get('faceted-search-results-amount')) {
+            window.customElements.define('faceted-search-results-amount', FacetedSearchResultsAmount);
+        }
     }
 }

@@ -11,6 +11,18 @@ const setup = async (hideErrors) => getDOM({
     hideErrors,
 });
 
+test('defineElement registers the custom element', async (t) => {
+    const { window } = await setup();
+    t.truthy(window.customElements.get('faceted-search-result-updater'));
+});
+
+test('defineElement is idempotent', async (t) => {
+    const { window } = await setup();
+    const FacetedSearchResultUpdater = window.customElements.get('faceted-search-result-updater');
+    t.notThrows(() => FacetedSearchResultUpdater.defineElement());
+    t.is(window.customElements.get('faceted-search-result-updater'), FacetedSearchResultUpdater);
+});
+
 const updaterHTML = `
     <faceted-search-result-updater
         data-item-selector=".result-item"

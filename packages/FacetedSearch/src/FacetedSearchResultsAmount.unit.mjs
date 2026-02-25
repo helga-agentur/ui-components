@@ -11,6 +11,18 @@ const setup = async (hideErrors) => getDOM({
     hideErrors,
 });
 
+test('defineElement registers the custom element', async (t) => {
+    const { window } = await setup();
+    t.truthy(window.customElements.get('faceted-search-results-amount'));
+});
+
+test('defineElement is idempotent', async (t) => {
+    const { window } = await setup();
+    const FacetedSearchResultsAmount = window.customElements.get('faceted-search-results-amount');
+    t.notThrows(() => FacetedSearchResultsAmount.defineElement());
+    t.is(window.customElements.get('faceted-search-results-amount'), FacetedSearchResultsAmount);
+});
+
 const amountHTML = `
     <faceted-search-results-amount data-amount-selector=".count">
         <span class="count"></span>
