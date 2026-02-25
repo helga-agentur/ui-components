@@ -10,7 +10,6 @@
  */
 import itemsjs from 'itemsjs';
 import MiniSearch from 'minisearch';
-import canEmitEvents from '../../../src/shared/canEmitEvents.mjs';
 
 export default class FacetedSearchModel {
 
@@ -44,6 +43,9 @@ export default class FacetedSearchModel {
     /** @type {object[]} search field configs with boost */
     #searchConfigs;
 
+    /** @type {Function[]} */
+    #changeListeners = [];
+
     /**
      * @param {object} options
      * @param {object[]} options.items - [{ id, filterFields: {}, searchFields: {} }]
@@ -59,8 +61,6 @@ export default class FacetedSearchModel {
         fuzzy = false,
         orderByRelevance = false,
     }) {
-        Object.assign(this, canEmitEvents());
-
         this.#items = items;
         this.#fuzzy = fuzzy;
         this.#orderByRelevance = orderByRelevance;
@@ -194,7 +194,7 @@ export default class FacetedSearchModel {
     /** @param {string} term */
     setSearchTerm(term) {
         this.#searchTerm = term;
-        this.emit('change');
+        this.#notifyChange();
     }
 
     /**
@@ -213,7 +213,16 @@ export default class FacetedSearchModel {
             this.#activeFilters[name] = this.#activeFilters[name]
                 .filter((active) => active !== value);
         }
-        this.emit('change');
+        this.#notifyChange();
+    }
+
+    #notifyChange() {
+        this.#changeListeners.forEach((cb) => cb());
+    }
+
+    /** @param {Function} callback */
+    onChange(callback) {
+        this.#changeListeners.push(callback);
     }
 
     /**

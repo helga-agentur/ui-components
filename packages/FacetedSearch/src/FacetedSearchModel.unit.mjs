@@ -201,7 +201,7 @@ test('handles multi-value fields with separator', (t) => {
 test('emits change on setSearchTerm', (t) => {
     const model = createTestModel();
     let emitted = 0;
-    model.on('change', () => { emitted += 1; });
+    model.onChange(() => { emitted += 1; });
     model.setSearchTerm('test');
     t.is(emitted, 1);
 });
@@ -209,7 +209,7 @@ test('emits change on setSearchTerm', (t) => {
 test('emits change on setFilter', (t) => {
     const model = createTestModel();
     let emitted = 0;
-    model.on('change', () => { emitted += 1; });
+    model.onChange(() => { emitted += 1; });
     model.setFilter('color', 'red', true);
     t.is(emitted, 1);
 });

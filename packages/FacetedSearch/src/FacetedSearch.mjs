@@ -208,7 +208,7 @@ export default class FacetedSearch extends HTMLElement {
         // Restore state before attaching the change listener to avoid
         // redundant #updateChildren calls for each restored value.
         this.#restoreFromHash();
-        this.#model.on('change', () => this.#updateChildren());
+        this.#model.onChange(() => this.#updateChildren());
         this.#updateChildren();
     }
 
