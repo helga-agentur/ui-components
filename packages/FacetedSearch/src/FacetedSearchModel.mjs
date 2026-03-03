@@ -235,11 +235,10 @@ export default class FacetedSearchModel {
 
     /**
      * Returns expected result counts for each value in a given filter,
-     * using itemsjs aggregation buckets. Active (selected) values
-     * return null since their count is not meaningful while selected.
+     * using itemsjs aggregation buckets.
      * @param {string} filterName
      * @param {Array<{ id: string, value: string }>} filterValues
-     * @returns {{ [valueId: string]: number|null }}
+     * @returns {{ [valueId: string]: number }}
      */
     getExpectedResults(filterName, filterValues) {
         const result = this.#runQuery();
@@ -253,14 +252,9 @@ export default class FacetedSearchModel {
             buckets.map((bucket) => [bucket.key, bucket.doc_count]),
         );
 
-        const activeValues = this.#activeFilters[filterName] || [];
         const counts = {};
         filterValues.forEach(({ id, value }) => {
-            if (activeValues.includes(value)) {
-                counts[id] = null;
-            } else {
-                counts[id] = bucketMap.get(value) || 0;
-            }
+            counts[id] = bucketMap.get(value) || 0;
         });
 
         return counts;
