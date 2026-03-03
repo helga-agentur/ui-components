@@ -143,15 +143,14 @@ test('computes expected results with active cross-filter', (t) => {
     t.is(counts['col-green'], 0);
 });
 
-test('returns null for active values within same filter', (t) => {
+test('returns aggregation count for active values within same filter', (t) => {
     const model = createTestModel();
     model.setFilter('color', 'red', true);
     model.setFilter('color', 'blue', true);
-    // Active values return null (count not meaningful while selected)
-    // Inactive value green shows its aggregation count
+    // OR logic within a filter: red=2, blue=1 match; green=1 would add
     const counts = model.getExpectedResults('color', filterValues.color);
-    t.is(counts['col-red'], null);
-    t.is(counts['col-blue'], null);
+    t.is(counts['col-red'], 2);
+    t.is(counts['col-blue'], 1);
     t.is(counts['col-green'], 1);
 });
 
