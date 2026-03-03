@@ -247,7 +247,13 @@ export default class FacetedSearch extends HTMLElement {
         const updated = values.length > 0
             ? writeHashKey(current, key, values)
             : removeHashKey(current, key);
-        window.location.hash = updated;
+        if (updated) {
+            window.location.hash = updated;
+        } else {
+            // Setting location.hash = '' leaves a trailing # in the URL.
+            // pushState removes it entirely.
+            window.history.pushState(null, '', window.location.pathname + window.location.search);
+        }
     }
 
     /** Pushes current model state to all child components. */
