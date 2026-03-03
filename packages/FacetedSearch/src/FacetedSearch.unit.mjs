@@ -11,6 +11,15 @@ const setup = async (hideErrors) => getDOM({
     hideErrors,
 });
 
+// history.pushState requires a real URL (not about:blank).
+// Use this setup for hash propagation tests.
+const setupWithUrl = async (hideErrors) => getDOM({
+    basePath,
+    scripts: ['FacetedSearchElement.mjs'],
+    hideErrors,
+    jsdomOptions: { url: 'http://localhost/' },
+});
+
 test('defineElement registers the custom element', async (t) => {
     const { window } = await setup();
     t.truthy(window.customElements.get('faceted-search'));
@@ -257,7 +266,7 @@ test('handles updater registering before reader', async (t) => {
 // URL hash propagation
 
 test('writes search term to URL hash when input has propagateToUrl', async (t) => {
-    const { document, window } = await setup(true);
+    const { document, window } = await setupWithUrl(true);
     const container = document.createElement('div');
     container.innerHTML = '<faceted-search></faceted-search>';
     document.body.appendChild(container);
@@ -280,12 +289,11 @@ test('writes search term to URL hash when input has propagateToUrl', async (t) =
         detail: { term: '' },
     }));
 
-    t.is(window.location.hash, '');
-    window.location.hash = '';
+    t.false(window.location.href.includes('#'));
 });
 
 test('writes filter state to URL hash when filter has propagateToUrl', async (t) => {
-    const { document, window } = await setup(true);
+    const { document, window } = await setupWithUrl(true);
     const container = document.createElement('div');
     container.innerHTML = '<faceted-search></faceted-search>';
     document.body.appendChild(container);
@@ -322,8 +330,7 @@ test('writes filter state to URL hash when filter has propagateToUrl', async (t)
         detail: { name: 'category', value: 'hats', selected: false },
     }));
 
-    t.is(window.location.hash, '');
-    window.location.hash = '';
+    t.false(window.location.href.includes('#'));
 });
 
 test('does not write to URL hash when propagateToUrl is false', async (t) => {
@@ -344,6 +351,60 @@ test('does not write to URL hash when propagateToUrl is false', async (t) => {
     }));
 
     t.is(window.location.hash, '');
+});
+
+test('removes # from URL when last filter is deselected', async (t) => {
+    const { document, window } = await setupWithUrl(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const filterCategory = createMockFilterValues('category', [
+        { id: 'c1', value: 'shoes' },
+    ], { propagateToUrl: true });
+
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filterCategory, window);
+    registerReaderAndUpdater(orchestrator, window);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
+        bubbles: true,
+        detail: { name: 'category', value: 'shoes', selected: true },
+    }));
+    t.is(window.location.hash, '#category=shoes');
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
+        bubbles: true,
+        detail: { name: 'category', value: 'shoes', selected: false },
+    }));
+
+    t.false(window.location.href.includes('#'));
+});
+
+test('removes # from URL when search term is cleared', async (t) => {
+    const { document, window } = await setupWithUrl(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const mockInput = createMockSearchInput({ propagateToUrl: true });
+
+    fireRegistration(orchestrator, 'facetedSearchRegisterSearchInput', mockInput, window);
+    registerReaderAndUpdater(orchestrator, window);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'running' },
+    }));
+    t.is(window.location.hash, '#search=running');
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: '' },
+    }));
+
+    t.false(window.location.href.includes('#'));
 });
 
 // Unregistration
