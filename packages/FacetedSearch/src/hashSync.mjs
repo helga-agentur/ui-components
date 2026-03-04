@@ -3,18 +3,11 @@
  * Multiple components share a single hash string; each caller owns its key(s)
  * and preserves all others.
  *
- * Format: #search=term&category=val1,val2&color=val3
- * Values within a key are comma-separated; commas in values are stripped on write.
+ * Format: #search=term&category=shoes&category=hats&city=New%20York%2C%20NY
+ * Multiple values for a key use repeated key=value pairs (standard GET param
+ * behaviour). Values are individually percent-encoded, so any character
+ * including commas is preserved exactly through a read→write round-trip.
  */
-
-const valueSeparator = ',';
-
-/**
- * Strips commas from a single value to prevent collision with the separator.
- * @param {string} value
- * @returns {string}
- */
-const sanitizeValue = (value) => value.replace(/,/g, '');
 
 /**
  * Parses the current location.hash into a map of key → string[].
@@ -29,8 +22,9 @@ const readHash = (hash) => {
         const index = pair.indexOf('=');
         if (index === -1) return;
         const key = decodeURIComponent(pair.slice(0, index));
-        const rawValue = decodeURIComponent(pair.slice(index + 1));
-        result[key] = rawValue.split(valueSeparator).filter(Boolean);
+        const value = decodeURIComponent(pair.slice(index + 1));
+        if (!result[key]) result[key] = [];
+        result[key].push(value);
     });
     return result;
 };
@@ -41,12 +35,12 @@ const readHash = (hash) => {
  * @returns {string}
  */
 const serializeHash = (params) => {
-    const pairs = Object.entries(params)
-        .filter(([, values]) => values.length > 0)
-        .map(([key, values]) => {
-            const joined = values.map(sanitizeValue).join(valueSeparator);
-            return `${encodeURIComponent(key)}=${encodeURIComponent(joined)}`;
+    const pairs = [];
+    Object.entries(params).forEach(([key, values]) => {
+        values.forEach((value) => {
+            pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
         });
+    });
     return pairs.join('&');
 };
 
