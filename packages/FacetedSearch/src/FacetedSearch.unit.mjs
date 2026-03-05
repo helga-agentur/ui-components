@@ -319,7 +319,7 @@ test('writes filter state to URL hash when filter has propagateToUrl', async (t)
         detail: { name: 'category', value: 'hats', selected: true },
     }));
 
-    t.is(window.location.hash, '#category=shoes%2Chats');
+    t.is(window.location.hash, '#category=shoes&category=hats');
 
     orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
         bubbles: true,

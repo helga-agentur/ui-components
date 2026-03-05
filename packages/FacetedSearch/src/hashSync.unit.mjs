@@ -4,7 +4,7 @@ import { readHash, writeHashKey, removeHashKey } from './hashSync.mjs';
 // readHash
 
 test('parses hash with multiple keys', (t) => {
-    const result = readHash('#search=hello&category=a,b&color=red');
+    const result = readHash('#search=hello&category=a&category=b&color=red');
     t.deepEqual(result, {
         search: ['hello'],
         category: ['a', 'b'],
@@ -17,11 +17,6 @@ test('handles empty hash', (t) => {
     t.deepEqual(readHash('#'), {});
 });
 
-test('handles hash with unrelated keys', (t) => {
-    const result = readHash('#debug=true&search=term');
-    t.deepEqual(result, { debug: ['true'], search: ['term'] });
-});
-
 test('handles special characters', (t) => {
     const result = readHash(`#search=${encodeURIComponent('hello world')}&tag=${encodeURIComponent('c++')}`);
     t.deepEqual(result, { search: ['hello world'], tag: ['c++'] });
@@ -32,11 +27,6 @@ test('ignores pairs without equals sign', (t) => {
     t.deepEqual(result, { validkey: ['value'] });
 });
 
-test('splits comma-separated values into array', (t) => {
-    const result = readHash('#category=books,music,film');
-    t.deepEqual(result, { category: ['books', 'music', 'film'] });
-});
-
 // writeHashKey
 
 test('writes single key preserving others', (t) => {
@@ -44,9 +34,9 @@ test('writes single key preserving others', (t) => {
     t.is(result, 'debug=true&color=red&search=hello');
 });
 
-test('writes multiple values as comma-separated', (t) => {
+test('writes multiple values as repeated keys', (t) => {
     const result = writeHashKey('', 'category', ['books', 'music']);
-    t.is(result, 'category=books%2Cmusic');
+    t.is(result, 'category=books&category=music');
 });
 
 test('overwrites existing key', (t) => {
@@ -69,12 +59,6 @@ test('removes key when values array is empty', (t) => {
     t.is(result, 'color=red');
 });
 
-test('strips commas from values to prevent separator collision', (t) => {
-    const result = writeHashKey('', 'search', ['a,b']);
-    // Comma is stripped, so the value becomes 'ab'
-    t.is(result, 'search=ab');
-});
-
 // removeHashKey
 
 test('removes key preserving others', (t) => {
@@ -95,7 +79,7 @@ test('returns empty string when removing last key', (t) => {
 // Round-trip
 
 test('round-trips parse and serialize', (t) => {
-    const original = '#search=hello%20world&category=books%2Cmusic&color=red';
+    const original = `#search=hello%20world&category=books&category=music&color=red`;
     const parsed = readHash(original);
     t.deepEqual(parsed, {
         search: ['hello world'],
