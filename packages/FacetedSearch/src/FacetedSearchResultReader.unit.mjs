@@ -88,6 +88,22 @@ test('handles multi-value filter fields with separator', async (t) => {
     t.is(errors.length, 0);
 });
 
+test('getSearchConfigs returns field names with boost values', async (t) => {
+    const { document, errors } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = readerHTML;
+    document.body.appendChild(container);
+
+    const component = document.querySelector('faceted-search-result-reader');
+    const configs = component.getSearchConfigs();
+
+    t.deepEqual(configs, [
+        { field: 'data-name', boost: 2 },
+        { field: 'data-description' },
+    ]);
+    t.is(errors.length, 0);
+});
+
 test('returns empty array when no items match selector', async (t) => {
     const { document, errors } = await setup(true);
     const container = document.createElement('div');

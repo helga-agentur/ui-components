@@ -53,7 +53,7 @@ Five custom elements work together through an orchestrator pattern:
                 data-item-selector=".result-item"
                 data-item-id-selector="[data-id]"
                 data-filter-properties='[{"fieldIDSelector": "[data-color]", "filterName": "color"}]'
-                data-search-properties='[{"fieldIDSelector": "[data-name]"}]'
+                data-search-properties='[{"fieldIDSelector": "[data-name]", "boost": 2}, {"fieldIDSelector": "[data-description]"}]'
             >
                 <div class="result-item" data-id="1" data-color="red" data-name="Red Shoe">Red Shoe</div>
                 <div class="result-item" data-id="2" data-color="blue" data-name="Blue Hat">Blue Hat</div>
@@ -132,6 +132,8 @@ data attributes on each result item.
 - `data-search-properties` (JSON string, required): Array of objects specifying which
   attributes to index for full-text search. Each entry has:
   - `fieldIDSelector`: attribute selector (e.g. `[data-name]`)
+  - `boost` (number, optional): score multiplier for this field — see
+    [MiniSearch docs](https://lucaong.github.io/minisearch/classes/MiniSearch.html#search) for details
 
 #### Structure
 Must contain the result item elements that match `data-item-selector`.
