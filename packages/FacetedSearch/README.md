@@ -159,8 +159,8 @@ reader must be nested inside the element matching `data-results-selector`.
 
 ## Development
 
-To test the components locally in a browser, use [Vite](https://vitejs.dev/) to serve the
-source files (it resolves bare module imports from `node_modules` automatically):
+To test the components locally in a browser, use [Vite](https://vitejs.dev/) to serve the 
+source files (it resolves bare module imports from `node_modules` automatically). From the root dir:
 
 ```bash
 npx vite packages/FacetedSearch/src

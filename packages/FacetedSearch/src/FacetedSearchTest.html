@@ -128,17 +128,24 @@
                             {"fieldIDSelector": "[data-size]", "filterName": "size"}
                         ]'
                         data-search-properties='[
-                            {"fieldIDSelector": "[data-name]"}
+                            {"fieldIDSelector": "[data-name]", "boost": 3},
+                            {"fieldIDSelector": "[data-description]"}
                         ]'
                     >
-                        <div class="result-item" data-id="1" data-category="shoes" data-color="red" data-size="M" data-name="Red Running Shoe">Red Running Shoe - Shoes, Red, M</div>
-                        <div class="result-item" data-id="2" data-category="shoes" data-color="blue" data-size="L" data-name="Blue Walking Shoe">Blue Walking Shoe - Shoes, Blue, L</div>
-                        <div class="result-item" data-id="3" data-category="hats" data-color="red" data-size="S" data-name="Red Baseball Hat">Red Baseball Hat - Hats, Red, S</div>
-                        <div class="result-item" data-id="4" data-category="hats" data-color="green" data-size="M" data-name="Green Bucket Hat">Green Bucket Hat - Hats, Green, M</div>
-                        <div class="result-item" data-id="5" data-category="bags" data-color="blue" data-size="L" data-name="Blue Tote Bag">Blue Tote Bag - Bags, Blue, L</div>
-                        <div class="result-item" data-id="6" data-category="bags" data-color="green" data-size="S" data-name="Green Backpack">Green Backpack - Bags, Green, S</div>
-                        <div class="result-item" data-id="7" data-category="shoes" data-color="green" data-size="S" data-name="Green Trail Shoe">Green Trail Shoe - Shoes, Green, S</div>
-                        <div class="result-item" data-id="8" data-category="hats" data-color="blue" data-size="L" data-name="Blue Sun Hat">Blue Sun Hat - Hats, Blue, L</div>
+                        <!-- "running" only in description → should rank below item 1 despite appearing first in DOM -->
+                        <div class="result-item" data-id="7" data-category="shoes" data-color="green" data-size="S" data-name="Green Trail Shoe" data-description="Durable shoe built for running on trails">Green Trail Shoe - Shoes, Green, S</div>
+                        <!-- "walking" only in description → should rank below item 2 despite appearing first in DOM -->
+                        <div class="result-item" data-id="6" data-category="bags" data-color="green" data-size="S" data-name="Green Backpack" data-description="Great for walking tours and daily use">Green Backpack - Bags, Green, S</div>
+                        <!-- "baseball" only in description → should rank below item 3 despite appearing first in DOM -->
+                        <div class="result-item" data-id="8" data-category="hats" data-color="blue" data-size="L" data-name="Blue Sun Hat" data-description="Wide-brim hat inspired by baseball style">Blue Sun Hat - Hats, Blue, L</div>
+                        <div class="result-item" data-id="4" data-category="hats" data-color="green" data-size="M" data-name="Green Bucket Hat" data-description="Relaxed hat for outdoor activities">Green Bucket Hat - Hats, Green, M</div>
+                        <div class="result-item" data-id="5" data-category="bags" data-color="blue" data-size="L" data-name="Blue Tote Bag" data-description="Spacious bag for shopping trips">Blue Tote Bag - Bags, Blue, L</div>
+                        <!-- Search "running": name match → should rank first despite appearing late in DOM -->
+                        <div class="result-item" data-id="1" data-category="shoes" data-color="red" data-size="M" data-name="Red Running Shoe" data-description="Lightweight shoe for outdoor use">Red Running Shoe - Shoes, Red, M</div>
+                        <!-- Search "walking": name match → should rank first despite appearing late in DOM -->
+                        <div class="result-item" data-id="2" data-category="shoes" data-color="blue" data-size="L" data-name="Blue Walking Shoe" data-description="Reliable shoe for everyday wear">Blue Walking Shoe - Shoes, Blue, L</div>
+                        <!-- Search "baseball": name match → should rank first despite appearing late in DOM -->
+                        <div class="result-item" data-id="3" data-category="hats" data-color="red" data-size="S" data-name="Red Baseball Hat" data-description="Bright cap for sunny days">Red Baseball Hat - Hats, Red, S</div>
                     </faceted-search-result-reader>
                 </div>
             </faceted-search-result-updater>
