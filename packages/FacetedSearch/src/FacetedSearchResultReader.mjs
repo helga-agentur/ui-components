@@ -3,7 +3,7 @@
  * provides structured data to the orchestrator. No visibility logic.
  */
 import { readAttribute } from '@helga-agency/ui-tools';
-import { extractItemData } from './extractItemData.mjs';
+import { extractItemData, extractAttributeName } from './extractItemData.mjs';
 
 /* global HTMLElement, window */
 
@@ -59,6 +59,17 @@ export default class FacetedSearchResultReader extends HTMLElement {
         if (this.#isCollected) return;
         this.#isCollected = true;
         this.#allItems = [...this.querySelectorAll(this.#itemSelector)];
+    }
+
+    /**
+     * Returns search configs derived from data-search-properties, preserving boost values.
+     * @returns {Array<{ field: string, boost?: number }>}
+     */
+    getSearchConfigs() {
+        return this.#searchProperties.map(({ fieldIDSelector, boost }) => ({
+            field: extractAttributeName(fieldIDSelector),
+            ...(boost !== undefined && { boost }),
+        }));
     }
 
     /**

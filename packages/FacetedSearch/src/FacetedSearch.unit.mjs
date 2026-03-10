@@ -34,8 +34,10 @@ test('defineElement is idempotent', async (t) => {
 });
 
 /** Creates a mock reader component. */
-const createMockReader = (items = []) => ({
+const createMockReader = (items = [], searchConfigs = null) => ({
     getItemData: () => items,
+    getSearchConfigs: () => searchConfigs
+        ?? (items.length > 0 ? Object.keys(items[0].searchFields).map((field) => ({ field })) : []),
 });
 
 /** Creates a mock updater component. */
@@ -133,6 +135,31 @@ test('accepts filter-values and input as optional', async (t) => {
 });
 
 // Delegation via events
+
+test('uses boost from reader getSearchConfigs when searching', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search data-order-by-relevance></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const items = [
+        { id: '1', filterFields: {}, searchFields: { name: 'Blue Hat', description: 'Red Shoe' } },
+        { id: '2', filterFields: {}, searchFields: { name: 'Red Shoe', description: 'Blue Hat' } },
+    ];
+    // name is heavily boosted: searching "Blue Hat" should rank item 1 first
+    const reader = createMockReader(items, [{ field: 'name', boost: 10 }, { field: 'description' }]);
+    const updater = createMockUpdater();
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', reader, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater, window);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'Blue Hat' },
+    }));
+
+    t.is(updater.lastVisibleIds[0], '1');
+});
 
 test('delegates search term change to model and updates children', async (t) => {
     const { document, window } = await setup(true);

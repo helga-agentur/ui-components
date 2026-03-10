@@ -192,9 +192,7 @@ export default class FacetedSearch extends HTMLElement {
         const filterConfigs = this.#filterComponents.map(
             (component) => ({ name: component.getFilterData().name }),
         );
-        const searchConfigs = items.length > 0
-            ? Object.keys(items[0].searchFields).map((field) => ({ field }))
-            : [];
+        const searchConfigs = this.#readerComponent.getSearchConfigs();
 
         this.#model = new FacetedSearchModel({
             items,
