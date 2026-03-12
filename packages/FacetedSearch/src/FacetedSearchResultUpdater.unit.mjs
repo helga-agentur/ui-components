@@ -122,6 +122,17 @@ test('hides results wrapper when empty', async (t) => {
     t.is(errors.length, 0);
 });
 
+test('updateResults accepts optional context without errors', async (t) => {
+    const { document, errors } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = updaterHTML;
+    document.body.appendChild(container);
+
+    const component = document.querySelector('faceted-search-result-updater');
+    t.notThrows(() => component.updateResults(['1'], { searchTerm: 'test', activeFilters: { color: ['red'] } }));
+    t.is(errors.length, 0);
+});
+
 test('restores results wrapper when results appear', async (t) => {
     const { document, errors } = await setup(true);
     const container = document.createElement('div');

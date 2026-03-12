@@ -42,8 +42,9 @@ const createMockReader = (items = [], searchConfigs = null) => ({
 
 /** Creates a mock updater component. */
 const createMockUpdater = () => ({
-    updateResults(ids) { this.lastVisibleIds = ids; },
+    updateResults(ids, context) { this.lastVisibleIds = ids; this.lastContext = context; },
     lastVisibleIds: null,
+    lastContext: undefined,
 });
 
 /** Creates a mock filter values component. */
@@ -572,6 +573,62 @@ test('unregistering one updater does not affect the other', async (t) => {
 
     t.is(updater1.lastVisibleIds, null);
     t.deepEqual(updater2.lastVisibleIds, ['1']);
+});
+
+// Context passed to updateResults
+
+test('passes searchTerm in context when term changes', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const { updater } = registerReaderAndUpdater(orchestrator, window);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'running' },
+    }));
+
+    t.is(updater.lastContext.searchTerm, 'running');
+});
+
+test('passes activeFilters in context when filter changes', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const updater = createMockUpdater();
+    const filterCategory = createMockFilterValues('category', [
+        { id: 'c1', value: 'shoes' },
+    ]);
+
+    fireRegistration(orchestrator, 'facetedSearchRegisterFilterValues', filterCategory, window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultReader', createMockReader(testItems), window);
+    fireRegistration(orchestrator, 'facetedSearchRegisterResultUpdater', updater, window);
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchFilterChange', {
+        bubbles: true,
+        detail: { name: 'category', value: 'shoes', selected: true },
+    }));
+
+    t.deepEqual(updater.lastContext.activeFilters, { category: ['shoes'] });
+});
+
+test('passes empty searchTerm and activeFilters in context on init', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const { updater } = registerReaderAndUpdater(orchestrator, window);
+
+    t.is(updater.lastContext.searchTerm, '');
+    t.deepEqual(updater.lastContext.activeFilters, {});
 });
 
 // Multiple search input warning

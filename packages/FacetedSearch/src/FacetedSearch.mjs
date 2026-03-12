@@ -260,7 +260,10 @@ export default class FacetedSearch extends HTMLElement {
 
         const visibleIds = this.#model.getVisibleIds();
         this.#updaterComponents.forEach((component) => {
-            component.updateResults(visibleIds);
+            component.updateResults(visibleIds, {
+                searchTerm: this.#model.searchTerm,
+                activeFilters: this.#model.activeFilters,
+            });
         });
 
         this.#filterComponents.forEach((component) => {
