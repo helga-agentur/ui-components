@@ -75,8 +75,9 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
      * Receives the current visible IDs from the orchestrator.
      * Shows/hides items and reorders DOM nodes to match the given order.
      * @param {string[]} orderedIds
+     * @param {{ searchTerm: string, activeFilters: Record<string, string[]> }} [context]
      */
-    updateResults(orderedIds) {
+    updateResults(orderedIds, context) {
         this.#ensureCollected();
 
         const parent = this.#allItems[0]?.parentNode;
