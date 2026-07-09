@@ -32,6 +32,12 @@ export default class FacetedSearch extends HTMLElement {
     /** @type {boolean} */
     #orderByRelevance;
 
+    /** @type {string|null} URL of a remote GET search endpoint, replacing local MiniSearch */
+    #searchGetEndpoint;
+
+    /** @type {string} name of the query parameter the search term is sent as */
+    #searchGetParam;
+
     constructor() {
         super();
         this.#fuzzy = readAttribute(this, 'data-fuzzy-search', {
@@ -39,6 +45,10 @@ export default class FacetedSearch extends HTMLElement {
         });
         this.#orderByRelevance = readAttribute(this, 'data-order-by-relevance', {
             transform: (value) => value !== null,
+        });
+        this.#searchGetEndpoint = readAttribute(this, 'data-search-get-endpoint');
+        this.#searchGetParam = readAttribute(this, 'data-search-get-param', {
+            transform: (value) => value || 'q',
         });
     }
 
@@ -200,6 +210,9 @@ export default class FacetedSearch extends HTMLElement {
             searchConfigs,
             fuzzy: this.#fuzzy,
             orderByRelevance: this.#orderByRelevance,
+            fetchSearchIds: this.#searchGetEndpoint
+                ? (term, signal) => this.#fetchSearchIds(term, signal)
+                : null,
         });
 
         // Restore state before attaching the change listener to avoid
@@ -207,6 +220,25 @@ export default class FacetedSearch extends HTMLElement {
         this.#restoreFromHash();
         this.#model.onChange(() => this.#updateChildren());
         this.#updateChildren();
+    }
+
+    /**
+     * Queries data-search-get-endpoint for matching item IDs. Sends the search term as
+     * the data-search-get-param query parameter and expects a JSON response of the
+     * shape { ids: string[] }.
+     * @param {string} term
+     * @param {AbortSignal} signal
+     * @returns {Promise<string[]>}
+     */
+    async #fetchSearchIds(term, signal) {
+        const params = new URLSearchParams({ [this.#searchGetParam]: term });
+        const url = `${this.#searchGetEndpoint}?${params}`;
+        const response = await fetch(url, { signal });
+        if (!response.ok) {
+            throw new Error(`FacetedSearch: search endpoint ${url} responded with status ${response.status}.`);
+        }
+        const { ids } = await response.json();
+        return ids;
     }
 
     /** @param {string} term */

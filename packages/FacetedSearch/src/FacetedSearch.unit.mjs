@@ -631,6 +631,89 @@ test('passes empty searchTerm and activeFilters in context on init', async (t) =
     t.deepEqual(updater.lastContext.activeFilters, {});
 });
 
+// Remote search endpoint
+
+test('uses data-search-get-endpoint to fetch search results instead of MiniSearch', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search data-search-get-endpoint="/api/search"></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const { updater } = registerReaderAndUpdater(orchestrator, window);
+
+    const requestedURLs = [];
+    window.fetch = async (url) => {
+        requestedURLs.push(url);
+        return { ok: true, json: async () => ({ ids: ['3'] }) };
+    };
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'hat' },
+    }));
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+    t.deepEqual(requestedURLs, ['/api/search?q=hat']);
+    t.deepEqual(updater.lastVisibleIds, ['3']);
+});
+
+test('uses data-search-get-param to name the query parameter', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = `<faceted-search
+        data-search-get-endpoint="/api/search"
+        data-search-get-param="string"
+    ></faceted-search>`;
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    registerReaderAndUpdater(orchestrator, window);
+
+    const requestedURLs = [];
+    window.fetch = async (url) => {
+        requestedURLs.push(url);
+        return { ok: true, json: async () => ({ ids: ['3'] }) };
+    };
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'hat' },
+    }));
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+    t.deepEqual(requestedURLs, ['/api/search?string=hat']);
+});
+
+test('logs and keeps prior results when the search endpoint responds with a non-ok status', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search data-search-get-endpoint="/api/search"></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const { updater } = registerReaderAndUpdater(orchestrator, window);
+
+    window.fetch = async () => ({ ok: false, status: 500 });
+
+    const errorLogs = [];
+    const originalError = console.error;
+    console.error = (...args) => errorLogs.push(args.join(' '));
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'hat' },
+    }));
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+    console.error = originalError;
+
+    t.is(errorLogs.length, 1);
+    t.regex(errorLogs[0], /responded with status 500/);
+    // Prior (unfiltered) results are kept visible rather than cleared on failure.
+    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
+});
+
 // Multiple search input warning
 
 test('warns when a second search input registers', async (t) => {

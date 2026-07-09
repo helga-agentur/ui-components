@@ -72,9 +72,19 @@ Orchestrator element. Wraps all other components. Manages child registration, cr
 internal model, delegates updates, and restores state from the URL hash.
 
 #### Attributes
-- `data-fuzzy-search` (boolean, optional): Enables fuzzy matching for full-text search.
+- `data-fuzzy-search` (boolean, optional): Enables fuzzy matching for full-text search. Ignored
+  when `data-search-get-endpoint` is set (matching is left to the endpoint).
 - `data-order-by-relevance` (boolean, optional): Orders results by search relevance when a
-  search term is active. When the search term is cleared, DOM order is restored.
+  search term is active. When the search term is cleared, DOM order is restored. When
+  `data-search-get-endpoint` is set, this preserves the endpoint's returned order instead of
+  MiniSearch's.
+- `data-search-get-endpoint` (string, optional): URL of a remote search endpoint, used instead of
+  the local MiniSearch index. Sends `GET <data-search-get-endpoint>?<param>=<term>` on each search
+  term change and expects `{ "ids": ["1", "2", ...] }` in response, ordered by relevance. Stale,
+  superseded requests are dropped; on error, the previous results stay visible and the error is
+  logged.
+- `data-search-get-param` (string, optional): Name of the query parameter the search term is sent
+  as. Defaults to `q`. Only relevant with `data-search-get-endpoint`.
 
 
 ### `<faceted-search-input>`
