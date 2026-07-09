@@ -223,9 +223,7 @@ export default class FacetedSearch extends HTMLElement {
     }
 
     /**
-     * Queries data-search-get-endpoint for matching item IDs. Sends the search term as
-     * the data-search-get-param query parameter and expects a JSON response of the
-     * shape { ids: string[] }.
+     * Queries data-search-get-endpoint for matching item IDs, expects { ids: string[] }.
      * @param {string} term
      * @param {AbortSignal} signal
      * @returns {Promise<string[]>}

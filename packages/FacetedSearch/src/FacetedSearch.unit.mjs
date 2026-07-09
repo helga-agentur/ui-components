@@ -710,7 +710,7 @@ test('logs and keeps prior results when the search endpoint responds with a non-
 
     t.is(errorLogs.length, 1);
     t.regex(errorLogs[0], /responded with status 500/);
-    // Prior (unfiltered) results are kept visible rather than cleared on failure.
+    // Prior results stay visible instead of being cleared.
     t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
 });
 

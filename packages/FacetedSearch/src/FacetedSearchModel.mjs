@@ -1,17 +1,11 @@
 /**
- * Core business logic for faceted search: holds state, runs combined queries
- * (itemsjs for filtering, MiniSearch or a remote endpoint for full-text search),
- * computes expected result counts per filter value. Pure class, no DOM.
+ * Core business logic for faceted search: holds state, runs itemsjs for filtering
+ * and MiniSearch (or a remote endpoint) for full-text search, computes expected
+ * result counts per filter value. Pure class, no DOM.
  *
- * Integration follows the recommended pattern from itemsjs docs:
- * full-text search returns matching IDs; itemsjs receives those IDs via its
- * `ids` parameter and handles faceted filtering + aggregation on that subset.
- *
- * Full-text search runs in one of two modes:
- * - Local (default): MiniSearch indexes searchConfigs and searches synchronously.
- * - Remote: when fetchSearchIds is injected, every setSearchTerm call awaits its
- *   result instead. Because requests can resolve out of order, in-flight requests
- *   are tracked so that a response is only applied if it is still the latest one.
+ * Full-text search is local via MiniSearch by default, or remote when fetchSearchIds
+ * is injected — setSearchTerm then awaits it and drops responses superseded by a
+ * newer search term.
  */
 import itemsjs from 'itemsjs';
 import MiniSearch from 'minisearch';
@@ -64,13 +58,13 @@ export default class FacetedSearchModel {
      * @param {object} options
      * @param {object[]} options.items - [{ id, filterFields: {}, searchFields: {} }]
      * @param {object[]} options.filterConfigs - [{ name }] — filter names to register
-     * @param {object[]} options.searchConfigs - [{ field, boost }] — search fields with boost,
-     *     only used by the local MiniSearch engine (ignored when fetchSearchIds is set)
+     * @param {object[]} options.searchConfigs - [{ field, boost }] — MiniSearch fields with boost
+     *     (ignored when fetchSearchIds is set)
      * @param {boolean} options.fuzzy - Enable fuzzy matching in MiniSearch (ignored when
      *     fetchSearchIds is set)
      * @param {boolean} options.orderByRelevance - Order by search relevance when searching
-     * @param {Function|null} options.fetchSearchIds - Async (term, signal) => Promise<string[]>.
-     *     When provided, full-text search is delegated to this function instead of MiniSearch.
+     * @param {Function|null} options.fetchSearchIds - Async (term, signal) => Promise<string[]>,
+     *     delegates full-text search to this instead of MiniSearch when provided
      */
     constructor({
         items,
@@ -133,8 +127,7 @@ export default class FacetedSearchModel {
 
     /**
      * Returns search result IDs ordered by relevance, or null if no search is active.
-     * In remote mode, returns the cached result of the most recently resolved
-     * fetchSearchIds call (read synchronously, updated asynchronously — see setSearchTerm).
+     * In remote mode, returns the last resolved fetchSearchIds result (see setSearchTerm).
      * @returns {string[]|null}
      */
     #getSearchedIds() {
@@ -226,11 +219,9 @@ export default class FacetedSearchModel {
     }
 
     /**
-     * Fetches search result IDs for the given term via the injected fetchSearchIds
-     * function and applies them once resolved. Aborts any previous in-flight
-     * request and drops responses that are no longer the latest (e.g. an older
-     * request resolving after a newer one), so a fast term can't be overwritten
-     * by a slower, earlier one.
+     * Fetches search result IDs via fetchSearchIds and applies them once resolved.
+     * Aborts the previous in-flight request and drops responses that are no longer
+     * the latest, so a slow, superseded request can't overwrite a newer one.
      * @param {string} term
      */
     async #fetchAndApplySearchedIds(term) {
@@ -253,12 +244,10 @@ export default class FacetedSearchModel {
             this.#searchedIds = ids;
             this.#notifyChange();
         } catch (error) {
-            // A superseded request was aborted (or failed) — its result no longer matters.
             if (this.#pendingSearchController !== controller) return;
             this.#pendingSearchController = null;
-            // Log rather than throw: this runs detached from setSearchTerm's caller, so
-            // throwing here would surface as an unhandled rejection. Previous results (if
-            // any) are kept visible instead of clearing them on a transient failure.
+            // Log rather than throw (this is detached from setSearchTerm's caller) and
+            // keep prior results visible instead of clearing them.
             console.error('FacetedSearchModel: fetchSearchIds failed.', error);
         }
     }

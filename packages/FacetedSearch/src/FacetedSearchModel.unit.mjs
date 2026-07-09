@@ -246,7 +246,7 @@ test('works with only search configs', (t) => {
 
 // Remote search (fetchSearchIds)
 
-/** Creates a promise together with its resolve function, to be resolved manually in tests. */
+/** Creates a promise plus its resolve function, for manual resolution in tests. */
 const createDeferred = () => {
     let resolve;
     const promise = new Promise((res) => { resolve = res; });
@@ -318,7 +318,7 @@ test('drops a stale response when a newer search term resolves first', async (t)
     model.setSearchTerm('a');
     model.setSearchTerm('b');
 
-    // Newer request ('b') resolves first, then the stale, older one ('a') resolves after.
+    // 'b' resolves first even though 'a' was requested first.
     deferred.b(['2']);
     await new Promise((resolve) => { setTimeout(resolve, 0); });
     deferred.a(['3']);
