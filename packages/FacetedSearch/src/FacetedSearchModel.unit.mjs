@@ -275,8 +275,7 @@ test('uses fetchSearchIds instead of MiniSearch when provided', async (t) => {
         return ['2', '3'];
     });
 
-    model.setSearchTerm('hat');
-    await new Promise((resolve) => { setTimeout(resolve, 0); });
+    await model.setSearchTerm('hat');
 
     t.deepEqual(calls, ['hat']);
     t.deepEqual(model.getVisibleIds(), ['2', '3']);
@@ -286,27 +285,28 @@ test('does not update visible ids until fetchSearchIds resolves', async (t) => {
     const deferred = createDeferred();
     const model = createEndpointTestModel(() => deferred.promise);
 
-    model.setSearchTerm('hat');
+    const pending = model.setSearchTerm('hat');
     // Still unresolved: falls back to original order (no cached result yet)
     t.deepEqual(model.getVisibleIds(), ['1', '2', '3']);
 
     deferred.resolve(['2', '3']);
-    await new Promise((resolve) => { setTimeout(resolve, 0); });
+    await pending;
     t.deepEqual(model.getVisibleIds(), ['2', '3']);
 });
 
-test('emits change only once fetchSearchIds resolves', async (t) => {
+test('resolving the remote search does not trigger onChange itself', async (t) => {
     const deferred = createDeferred();
     const model = createEndpointTestModel(() => deferred.promise);
     let emitted = 0;
     model.onChange(() => { emitted += 1; });
 
-    model.setSearchTerm('hat');
+    const pending = model.setSearchTerm('hat');
     t.is(emitted, 0);
 
     deferred.resolve(['2']);
-    await new Promise((resolve) => { setTimeout(resolve, 0); });
-    t.is(emitted, 1);
+    await pending;
+    // Resolving the fetch doesn't notify - the caller re-renders after awaiting.
+    t.is(emitted, 0);
 });
 
 test('drops a stale response when a newer search term resolves first', async (t) => {
@@ -315,37 +315,41 @@ test('drops a stale response when a newer search term resolves first', async (t)
         deferred[term] = resolve;
     }));
 
-    model.setSearchTerm('a');
-    model.setSearchTerm('b');
+    const pendingA = model.setSearchTerm('a');
+    const pendingB = model.setSearchTerm('b');
 
     // 'b' resolves first even though 'a' was requested first.
     deferred.b(['2']);
-    await new Promise((resolve) => { setTimeout(resolve, 0); });
+    await pendingB;
     deferred.a(['3']);
-    await new Promise((resolve) => { setTimeout(resolve, 0); });
+    await pendingA;
 
     t.deepEqual(model.getVisibleIds(), ['2']);
+});
+
+test('rethrows genuine fetchSearchIds failures', async (t) => {
+    const model = createEndpointTestModel(async () => { throw new Error('boom'); });
+    await t.throwsAsync(() => model.setSearchTerm('hat'), { message: 'boom' });
 });
 
 test('clearing the search term while a request is in flight resets synchronously', async (t) => {
     const deferred = createDeferred();
     const model = createEndpointTestModel(() => deferred.promise);
 
-    model.setSearchTerm('hat');
+    const pending = model.setSearchTerm('hat');
     model.setSearchTerm('');
     t.deepEqual(model.getVisibleIds(), ['1', '2', '3']);
 
     // A late resolution of the abandoned request must not resurrect stale results.
     deferred.resolve(['2']);
-    await new Promise((resolve) => { setTimeout(resolve, 0); });
+    await pending;
     t.deepEqual(model.getVisibleIds(), ['1', '2', '3']);
 });
 
 test('combines remote search results with active filters', async (t) => {
     const model = createEndpointTestModel(async () => ['1', '2']);
     model.setFilter('category', 'hats', true);
-    model.setSearchTerm('x');
-    await new Promise((resolve) => { setTimeout(resolve, 0); });
+    await model.setSearchTerm('x');
 
     // Search: 1, 2. Filter: hats → 2, 3. Intersection: 2
     t.deepEqual(model.getVisibleIds(), ['2']);
@@ -353,8 +357,7 @@ test('combines remote search results with active filters', async (t) => {
 
 test('orderByRelevance preserves fetchSearchIds order in remote mode', async (t) => {
     const model = createEndpointTestModel(async () => ['3', '1'], { orderByRelevance: true });
-    model.setSearchTerm('x');
-    await new Promise((resolve) => { setTimeout(resolve, 0); });
+    await model.setSearchTerm('x');
 
     t.deepEqual(model.getVisibleIds(), ['3', '1']);
 });

@@ -133,6 +133,44 @@ test('updateResults accepts optional context without errors', async (t) => {
     t.is(errors.length, 0);
 });
 
+const updaterWithErrorHTML = `
+    <faceted-search-result-updater
+        data-item-selector=".result-item"
+        data-item-id-selector="[data-id]"
+        data-search-error-selector=".search-error"
+    >
+        <div class="result-item" data-id="1">Item 1</div>
+        <div class="search-error" hidden>Search failed</div>
+    </faceted-search-result-updater>
+`;
+
+test('shows search error element when context.searchError is true', async (t) => {
+    const { document, errors } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = updaterWithErrorHTML;
+    document.body.appendChild(container);
+
+    const component = document.querySelector('faceted-search-result-updater');
+    component.updateResults(['1'], { searchError: true });
+
+    t.false(document.querySelector('.search-error').hidden);
+    t.is(errors.length, 0);
+});
+
+test('hides search error element when context.searchError is false', async (t) => {
+    const { document, errors } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = updaterWithErrorHTML;
+    document.body.appendChild(container);
+
+    const component = document.querySelector('faceted-search-result-updater');
+    component.updateResults(['1'], { searchError: true });
+    component.updateResults(['1'], { searchError: false });
+
+    t.true(document.querySelector('.search-error').hidden);
+    t.is(errors.length, 0);
+});
+
 test('restores results wrapper when results appear', async (t) => {
     const { document, errors } = await setup(true);
     const container = document.createElement('div');

@@ -25,6 +25,7 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
     #itemIdSelector;
     #emptyResultsSelector;
     #resultsSelector;
+    #searchErrorSelector;
 
     constructor() {
         super();
@@ -38,6 +39,7 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
         });
         this.#emptyResultsSelector = readAttribute(this, 'data-empty-results-selector');
         this.#resultsSelector = readAttribute(this, 'data-results-selector');
+        this.#searchErrorSelector = readAttribute(this, 'data-search-error-selector');
     }
 
     connectedCallback() {
@@ -75,7 +77,8 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
      * Receives the current visible IDs from the orchestrator.
      * Shows/hides items and reorders DOM nodes to match the given order.
      * @param {string[]} orderedIds
-     * @param {{ searchTerm: string, activeFilters: Record<string, string[]> }} [context]
+     * @param {{ searchTerm: string, activeFilters: Record<string, string[]>,
+     *     searchError: boolean }} [context]
      */
     updateResults(orderedIds, context) {
         this.#ensureCollected();
@@ -108,6 +111,7 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
         }
 
         this.#toggleEmptyState(orderedIds.length > 0);
+        this.#toggleSelector(this.#searchErrorSelector, context?.searchError);
     }
 
     /**
@@ -122,6 +126,17 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
         const resultsEl = this.querySelector(this.#resultsSelector);
         if (emptyEl) emptyEl.hidden = hasResults;
         if (resultsEl) resultsEl.hidden = !hasResults;
+    }
+
+    /**
+     * Shows the element matching selector when active, hides it otherwise.
+     * @param {string|null} selector
+     * @param {boolean} [active]
+     */
+    #toggleSelector(selector, active) {
+        if (!selector) return;
+        const el = this.querySelector(selector);
+        if (el) el.hidden = !active;
     }
 
     static defineElement() {

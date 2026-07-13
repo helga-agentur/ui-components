@@ -685,7 +685,7 @@ test('uses data-search-get-param to name the query parameter', async (t) => {
     t.deepEqual(requestedURLs, ['/api/search?string=hat']);
 });
 
-test('logs and keeps prior results when the search endpoint responds with a non-ok status', async (t) => {
+test('logs, flags context.searchError and keeps prior results on a non-ok status', async (t) => {
     const { document, window } = await setup(true);
     const container = document.createElement('div');
     container.innerHTML = '<faceted-search data-search-get-endpoint="/api/search"></faceted-search>';
@@ -712,6 +712,39 @@ test('logs and keeps prior results when the search endpoint responds with a non-
     t.regex(errorLogs[0], /responded with status 500/);
     // Prior results stay visible instead of being cleared.
     t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
+    t.true(updater.lastContext.searchError);
+});
+
+test('clears context.searchError once a subsequent search succeeds', async (t) => {
+    const { document, window } = await setup(true);
+    const container = document.createElement('div');
+    container.innerHTML = '<faceted-search data-search-get-endpoint="/api/search"></faceted-search>';
+    document.body.appendChild(container);
+
+    const orchestrator = document.querySelector('faceted-search');
+    const { updater } = registerReaderAndUpdater(orchestrator, window);
+
+    window.fetch = async () => ({ ok: false, status: 500 });
+    const originalError = console.error;
+    console.error = () => {};
+
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'hat' },
+    }));
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+    t.true(updater.lastContext.searchError);
+
+    window.fetch = async () => ({ ok: true, json: async () => ({ ids: ['3'] }) });
+    orchestrator.dispatchEvent(new window.CustomEvent('facetedSearchTermChange', {
+        bubbles: true,
+        detail: { term: 'cap' },
+    }));
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+    console.error = originalError;
+    t.false(updater.lastContext.searchError);
+    t.deepEqual(updater.lastVisibleIds, ['3']);
 });
 
 // Multiple search input warning

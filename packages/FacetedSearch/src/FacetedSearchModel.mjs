@@ -4,8 +4,10 @@
  * result counts per filter value. Pure class, no DOM.
  *
  * Full-text search is local via MiniSearch by default, or remote when fetchSearchIds
- * is injected — setSearchTerm then awaits it and drops responses superseded by a
- * newer search term.
+ * is injected. In remote mode, setSearchTerm returns a promise the caller can await
+ * (e.g. for a loading/error state) instead of relying on onChange, which stays
+ * reserved for synchronous state changes. Stale requests are dropped silently;
+ * genuine failures are rethrown, previous results stay in place.
  */
 import itemsjs from 'itemsjs';
 import MiniSearch from 'minisearch';
@@ -127,7 +129,8 @@ export default class FacetedSearchModel {
 
     /**
      * Returns search result IDs ordered by relevance, or null if no search is active.
-     * In remote mode, returns the last resolved fetchSearchIds result (see setSearchTerm).
+     * In remote mode, returns the last resolved fetchSearchIds result (see
+     * fetchAndApplySearchedIds).
      * @returns {string[]|null}
      */
     #getSearchedIds() {
@@ -208,21 +211,30 @@ export default class FacetedSearchModel {
         return resultIds;
     }
 
-    /** @param {string} term */
+    /**
+     * In local mode, recomputes and notifies immediately, returns undefined.
+     * In remote mode, kicks off the fetchSearchIds lookup and returns a promise
+     * the caller can await instead; resolves once applied, rethrows genuine
+     * failures. Does not call onChange itself in that case.
+     * @param {string} term
+     * @returns {Promise<void>|undefined}
+     */
     setSearchTerm(term) {
         this.#searchTerm = term;
-        if (this.#fetchSearchIds) {
-            this.#fetchAndApplySearchedIds(term);
-            return;
+        if (!this.#fetchSearchIds) {
+            this.#notifyChange();
+            return undefined;
         }
-        this.#notifyChange();
+        return this.#fetchAndApplySearchedIds(term);
     }
 
     /**
-     * Fetches search result IDs via fetchSearchIds and applies them once resolved.
-     * Aborts the previous in-flight request and drops responses that are no longer
-     * the latest, so a slow, superseded request can't overwrite a newer one.
+     * Runs the fetchSearchIds lookup for term and applies the result. Aborts
+     * the previous in-flight request; a response superseded by a newer call
+     * is silently ignored. Rethrows genuine failures, leaving previously
+     * resolved ids untouched.
      * @param {string} term
+     * @returns {Promise<void>}
      */
     async #fetchAndApplySearchedIds(term) {
         if (this.#pendingSearchController) this.#pendingSearchController.abort();
@@ -230,7 +242,6 @@ export default class FacetedSearchModel {
         if (!term) {
             this.#pendingSearchController = null;
             this.#searchedIds = null;
-            this.#notifyChange();
             return;
         }
 
@@ -242,13 +253,10 @@ export default class FacetedSearchModel {
             if (this.#pendingSearchController !== controller) return;
             this.#pendingSearchController = null;
             this.#searchedIds = ids;
-            this.#notifyChange();
         } catch (error) {
             if (this.#pendingSearchController !== controller) return;
             this.#pendingSearchController = null;
-            // Log rather than throw (this is detached from setSearchTerm's caller) and
-            // keep prior results visible instead of clearing them.
-            console.error('FacetedSearchModel: fetchSearchIds failed.', error);
+            throw error;
         }
     }
 
