@@ -19,6 +19,7 @@ Simple slider for scrollable panes. Does
     data-next-button-selector=".forward"
     data-disabled-button-class-name="disabled"
     data-active-content-selector=".active"
+    data-scroll-fraction="0.5"
 >
     <div class="element">Test</div>
     <div class="element">Test</div>
@@ -48,4 +49,7 @@ disabled (depending on the scroll position; if the scroll position is 0, this cl
 the *previous* button, as user cannot scroll any more towards the previous view).
 - `data-active-content-selector` (optional): CSS selector for the active element; the element must
 be a child of `<slider-component>` and will be scrolled into view on initialization.
+- `data-scroll-fraction` (optional): Number that multiplies the per-click scroll distance; e.g.
+`0.5` scrolls half a viewport per button click. Defaults to `1` (a full viewport) when the attribute
+is missing, not a number, or not greater than `0`, so omitting it keeps the default behavior.
 

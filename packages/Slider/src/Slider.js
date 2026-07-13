@@ -28,6 +28,14 @@ export default class extends HTMLElement {
                 // Buttons are optional, so is className
                 name: 'data-disabled-button-class-name',
                 property: 'disabledButtonClassName',
+            }, {
+                // Fraction of the viewport to scroll per button click; optional, defaults to 1 (100%)
+                name: 'data-scroll-fraction',
+                property: 'scrollFraction',
+                transform: (value) => {
+                    const number = Number(value);
+                    return value !== null && number > 0 ? number : 1;
+                },
             }]),
         );
         this.readAttributes();
@@ -105,7 +113,7 @@ export default class extends HTMLElement {
 
     handleButtonClick(ev) {
         const direction = ev.currentTarget === this.nextButton ? 1 : -1;
-        const scrollDiff = this.getElementWidth() * direction;
+        const scrollDiff = this.getElementWidth() * this.scrollFraction * direction;
         this.scrollBy({
             left: scrollDiff,
             behavior: 'smooth',

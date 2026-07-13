@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.2.0](https://github.com/joinbox/ui-components/compare/@joinbox/slider@1.1.0...@joinbox/slider@1.2.0) (2026-07-13)
+
+
+### Features
+
+* **slider:** add optional `data-scroll-fraction` attribute to scroll a configurable fraction of the viewport per button click (defaults to `1`, keeping the previous full-viewport behavior)
+
+
+
+
+
 # [1.1.0](https://github.com/joinbox/ui-components/compare/@joinbox/slider@1.0.9...@joinbox/slider@1.1.0) (2024-07-01)
 
 
