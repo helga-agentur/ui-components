@@ -88,7 +88,7 @@
                     name: 'data-disabled-button-class-name',
                     property: 'disabledButtonClassName',
                 }, {
-                    // Fraction of the viewport to scroll per button click; optional, defaults to 1
+                    // Fraction of the viewport to scroll per button click; optional, defaults to 1 (100%)
                     name: 'data-scroll-fraction',
                     property: 'scrollFraction',
                     transform: (value) => {
