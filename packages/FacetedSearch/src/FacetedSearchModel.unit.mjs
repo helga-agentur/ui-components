@@ -353,12 +353,13 @@ test.serial('drops a stale response when a newer search term resolves first', as
     t.deepEqual(model.getVisibleIds(), ['2']);
 });
 
-test.serial('rethrows genuine failures from the endpoint', async (t) => {
+test.serial('rethrows genuine failures and clears results from the endpoint', async (t) => {
     const restore = mockFetch(async () => ({ ok: false, status: 500 }));
     const model = createEndpointTestModel();
     const error = await t.throwsAsync(() => model.setSearchTerm('hat'));
     restore();
     t.regex(error.message, /responded with status 500/);
+    t.deepEqual(model.getVisibleIds(), []);
 });
 
 test.serial('clearing the search term while a request is in flight resets synchronously', async (t) => {

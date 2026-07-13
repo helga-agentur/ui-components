@@ -238,8 +238,8 @@ export default class FacetedSearchModel {
     /**
      * Runs the endpoint lookup for term and applies the result. Aborts the
      * previous in-flight request; a response superseded by a newer call is
-     * silently ignored. Rethrows genuine failures, leaving previously
-     * resolved ids untouched.
+     * silently ignored. On genuine failure, clears results (getVisibleIds
+     * returns empty) and rethrows for the caller to show an error state.
      * @param {string} term
      * @returns {Promise<void>}
      */
@@ -263,6 +263,7 @@ export default class FacetedSearchModel {
         } catch (error) {
             if (this.#pendingSearchController !== controller) return;
             this.#pendingSearchController = null;
+            this.#searchedIds = [];
             throw error;
         }
     }

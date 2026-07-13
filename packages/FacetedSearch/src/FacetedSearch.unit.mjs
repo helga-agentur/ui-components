@@ -685,7 +685,7 @@ test('uses data-search-get-param to name the query parameter', async (t) => {
     t.deepEqual(requestedURLs, ['/api/search?string=hat']);
 });
 
-test('logs, flags context.searchError and keeps prior results on a non-ok status', async (t) => {
+test('logs, flags context.searchError and clears results on a non-ok status', async (t) => {
     const { document, window } = await setup(true);
     const container = document.createElement('div');
     container.innerHTML = '<faceted-search data-search-get-endpoint="/api/search"></faceted-search>';
@@ -710,8 +710,8 @@ test('logs, flags context.searchError and keeps prior results on a non-ok status
 
     t.is(errorLogs.length, 1);
     t.regex(errorLogs[0], /responded with status 500/);
-    // Prior results stay visible instead of being cleared.
-    t.deepEqual(updater.lastVisibleIds, ['1', '2', '3']);
+    // Results are cleared rather than left stale, so the error isn't misread as a match.
+    t.deepEqual(updater.lastVisibleIds, []);
     t.true(updater.lastContext.searchError);
 });
 
