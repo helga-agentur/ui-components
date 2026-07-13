@@ -45,6 +45,36 @@ test('scrolls on button click', async(t) => {
     t.is(errors.length, 0);
 });
 
+test('scrolls a fraction of the viewport if data-scroll-fraction is set', async(t) => {
+    const { document, errors, window } = await setup(true);
+    const scrolls = [];
+    // https://github.com/jsdom/jsdom/issues/2342; JSDOM does not know layout
+    Object.defineProperty(window.HTMLElement.prototype, 'clientWidth', { value: 50 });
+    window.HTMLElement.prototype.scrollBy = function(params) { scrolls.push(params.left) };
+    const slider = createElement(document, '<div><div class="prev"></div><slider-component data-scroll-fraction="0.5" data-next-button-selector=".next" data-previous-button-selector=".prev" data-disabled-button-class-name="disabled"></slider-component><div class="next"></div></div>');
+    document.body.appendChild(slider);
+    slider.querySelector('.next').click();
+    slider.querySelector('.prev').click();
+    // Half of clientWidth (50) in each direction
+    t.deepEqual(scrolls, [25, -25]);
+    t.is(errors.length, 0);
+});
+
+test('scrolls the full viewport if data-scroll-fraction is not set', async(t) => {
+    const { document, errors, window } = await setup(true);
+    const scrolls = [];
+    // https://github.com/jsdom/jsdom/issues/2342; JSDOM does not know layout
+    Object.defineProperty(window.HTMLElement.prototype, 'clientWidth', { value: 50 });
+    window.HTMLElement.prototype.scrollBy = function(params) { scrolls.push(params.left) };
+    const slider = createElement(document, '<div><div class="prev"></div><slider-component data-next-button-selector=".next" data-previous-button-selector=".prev" data-disabled-button-class-name="disabled"></slider-component><div class="next"></div></div>');
+    document.body.appendChild(slider);
+    slider.querySelector('.next').click();
+    slider.querySelector('.prev').click();
+    // Full clientWidth (50) in each direction
+    t.deepEqual(scrolls, [50, -50]);
+    t.is(errors.length, 0);
+});
+
 test('disables buttons if content is narrower than container', async(t) => {
     const { document, errors, window } = await setup(true);
     // https://github.com/jsdom/jsdom/issues/2342; JSDOM does not know layout
