@@ -218,9 +218,8 @@ export default class FacetedSearch extends HTMLElement {
             searchConfigs,
             fuzzy: this.#fuzzy,
             orderByRelevance: this.#orderByRelevance,
-            fetchSearchIds: this.#searchGetEndpoint
-                ? (term, signal) => this.#fetchSearchIds(term, signal)
-                : null,
+            searchGetEndpoint: this.#searchGetEndpoint,
+            searchGetParam: this.#searchGetParam,
         });
 
         // Restore state before attaching the change listener to avoid
@@ -228,23 +227,6 @@ export default class FacetedSearch extends HTMLElement {
         this.#restoreFromHash();
         this.#model.onChange(() => this.#updateChildren());
         this.#updateChildren();
-    }
-
-    /**
-     * Queries data-search-get-endpoint for matching item IDs, expects { ids: string[] }.
-     * @param {string} term
-     * @param {AbortSignal} signal
-     * @returns {Promise<string[]>}
-     */
-    async #fetchSearchIds(term, signal) {
-        const params = new URLSearchParams({ [this.#searchGetParam]: term });
-        const url = `${this.#searchGetEndpoint}?${params}`;
-        const response = await fetch(url, { signal });
-        if (!response.ok) {
-            throw new Error(`FacetedSearch: search endpoint ${url} responded with status ${response.status}.`);
-        }
-        const { ids } = await response.json();
-        return ids;
     }
 
     /** @param {string} term */
