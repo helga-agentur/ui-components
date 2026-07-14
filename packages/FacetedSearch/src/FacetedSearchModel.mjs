@@ -7,7 +7,7 @@
  * when searchGetEndpoint is set. In remote mode, setSearchTerm returns a promise
  * the caller can await (e.g. for a loading/error state) instead of relying on
  * onChange, which stays reserved for synchronous state changes. Stale requests
- * are dropped silently; genuine failures are rethrown, previous results stay in place.
+ * are dropped silently; genuine failures are rethrown and clear results.
  */
 import itemsjs from 'itemsjs';
 import MiniSearch from 'minisearch';
