@@ -25,7 +25,7 @@ Run `npm i` in the root directory. It will install all dependencies for all work
 1. Run `npm version <patch|major|minor> -w <packageName>` to create a new version for a specific
    package or `-ws` for all packages.
 1. Commit `package.json` files with new version.
-1. Create tag for packages that will change their version: `@helga-agency/<packageName>@<version>`
+1. Create tag for packages that will change their version: `git tag @helga-agency/<packageName>@<version>`
 1. Push the Git tag: `git push origin <tag>`
 1. Run `npm publish -w <packageName>` to publish a specific package or `-ws` for all packages.
 
