@@ -1,6 +1,11 @@
 /**
  * Web component that receives ordered visible IDs from the orchestrator
  * and updates the DOM accordingly. No data extraction logic.
+ *
+ * Meant to be subclassed for project-specific display logic (e.g. different
+ * layouts for "no search term" vs. "search term active"), so its fields and
+ * methods are public rather than private. Treat them as public API: renaming
+ * or changing the behavior of any of them is a breaking change for subclasses.
  */
 import { readAttribute } from '@helga-agency/ui-tools';
 import { readItemAttribute } from './extractItemData.mjs';
@@ -10,38 +15,38 @@ import { readItemAttribute } from './extractItemData.mjs';
 export default class FacetedSearchResultUpdater extends HTMLElement {
 
     /** @type {HTMLElement[]} all item elements in original DOM order */
-    #allItems = [];
+    allItems = [];
 
     /** @type {Map<string, HTMLElement>} id → item element */
-    #itemMap = new Map();
+    itemMap = new Map();
 
     /** @type {Map<HTMLElement, string>} item element → id */
-    #reverseMap = new Map();
+    reverseMap = new Map();
 
     /** @type {boolean} */
-    #isCollected = false;
+    isCollected = false;
 
-    #itemSelector;
-    #itemIdSelector;
-    #emptyResultsSelector;
-    #resultsSelector;
-    #searchErrorSelector;
-    #searchLoadingSelector;
+    itemSelector;
+    itemIdSelector;
+    emptyResultsSelector;
+    resultsSelector;
+    searchErrorSelector;
+    searchLoadingSelector;
 
     constructor() {
         super();
-        this.#itemSelector = readAttribute(this, 'data-item-selector', {
+        this.itemSelector = readAttribute(this, 'data-item-selector', {
             validate: (value) => !!value,
             expectation: 'a non-empty selector string',
         });
-        this.#itemIdSelector = readAttribute(this, 'data-item-id-selector', {
+        this.itemIdSelector = readAttribute(this, 'data-item-id-selector', {
             validate: (value) => !!value,
             expectation: 'a non-empty attribute selector string',
         });
-        this.#emptyResultsSelector = readAttribute(this, 'data-empty-results-selector');
-        this.#resultsSelector = readAttribute(this, 'data-results-selector');
-        this.#searchErrorSelector = readAttribute(this, 'data-search-error-selector');
-        this.#searchLoadingSelector = readAttribute(this, 'data-search-loading-selector');
+        this.emptyResultsSelector = readAttribute(this, 'data-empty-results-selector');
+        this.resultsSelector = readAttribute(this, 'data-results-selector');
+        this.searchErrorSelector = readAttribute(this, 'data-search-error-selector');
+        this.searchLoadingSelector = readAttribute(this, 'data-search-loading-selector');
     }
 
     connectedCallback() {
@@ -61,16 +66,16 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
     }
 
     /** Lazily collects items and builds lookup maps on first access. */
-    #ensureCollected() {
-        if (this.#isCollected) return;
-        this.#isCollected = true;
+    ensureCollected() {
+        if (this.isCollected) return;
+        this.isCollected = true;
 
-        this.#allItems = [...this.querySelectorAll(this.#itemSelector)];
-        this.#allItems.forEach((item) => {
-            const id = readItemAttribute(item, this.#itemIdSelector);
+        this.allItems = [...this.querySelectorAll(this.itemSelector)];
+        this.allItems.forEach((item) => {
+            const id = readItemAttribute(item, this.itemIdSelector);
             if (id) {
-                this.#itemMap.set(id, item);
-                this.#reverseMap.set(item, id);
+                this.itemMap.set(id, item);
+                this.reverseMap.set(item, id);
             }
         });
     }
@@ -83,15 +88,15 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
      *     searchError: boolean, searchLoading: boolean }} [context]
      */
     updateResults(orderedIds, context) {
-        this.#ensureCollected();
+        this.ensureCollected();
 
-        const parent = this.#allItems[0]?.parentNode;
+        const parent = this.allItems[0]?.parentNode;
         if (!parent) return;
 
         const visibleSet = new Set(orderedIds);
 
-        this.#allItems.forEach((el) => {
-            const shouldShow = visibleSet.has(this.#reverseMap.get(el));
+        this.allItems.forEach((el) => {
+            const shouldShow = visibleSet.has(this.reverseMap.get(el));
             // eslint-disable-next-line no-param-reassign
             if (shouldShow && el.hidden) el.hidden = false;
             // eslint-disable-next-line no-param-reassign
@@ -100,21 +105,21 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
 
         const currentOrder = [...parent.children]
             .filter((el) => !el.hidden)
-            .map((el) => this.#reverseMap.get(el));
+            .map((el) => this.reverseMap.get(el));
 
         const needsReorder = orderedIds.length !== currentOrder.length
             || orderedIds.some((id, index) => id !== currentOrder[index]);
 
         if (needsReorder) {
             orderedIds.forEach((id) => {
-                const item = this.#itemMap.get(id);
+                const item = this.itemMap.get(id);
                 if (item) parent.appendChild(item);
             });
         }
 
-        this.#toggleEmptyState(orderedIds.length > 0);
-        this.#toggleSelector(this.#searchErrorSelector, context?.searchError);
-        this.#toggleSelector(this.#searchLoadingSelector, context?.searchLoading);
+        this.toggleEmptyState(orderedIds.length > 0);
+        this.toggleSelector(this.searchErrorSelector, context?.searchError);
+        this.toggleSelector(this.searchLoadingSelector, context?.searchLoading);
     }
 
     /**
@@ -122,11 +127,11 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
      * Only toggles when both selectors are configured.
      * @param {boolean} hasResults
      */
-    #toggleEmptyState(hasResults) {
-        if (!this.#emptyResultsSelector || !this.#resultsSelector) return;
+    toggleEmptyState(hasResults) {
+        if (!this.emptyResultsSelector || !this.resultsSelector) return;
 
-        const emptyEl = this.querySelector(this.#emptyResultsSelector);
-        const resultsEl = this.querySelector(this.#resultsSelector);
+        const emptyEl = this.querySelector(this.emptyResultsSelector);
+        const resultsEl = this.querySelector(this.resultsSelector);
         if (emptyEl) emptyEl.hidden = hasResults;
         if (resultsEl) resultsEl.hidden = !hasResults;
     }
@@ -136,7 +141,7 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
      * @param {string|null} selector
      * @param {boolean} [active]
      */
-    #toggleSelector(selector, active) {
+    toggleSelector(selector, active) {
         if (!selector) return;
         const el = this.querySelector(selector);
         if (el) el.hidden = !active;

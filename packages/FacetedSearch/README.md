@@ -155,6 +155,10 @@ Must contain the result item elements that match `data-item-selector`.
 Receives ordered visible IDs from the orchestrator and updates the DOM: shows/hides items,
 reorders them to match relevance order, and toggles an empty-state message.
 
+The `FacetedSearchResultUpdater` class is meant to be subclassed when a project needs different
+DOM handling (e.g. a different layout depending on whether a search term is active). See the
+class doc comment: its fields/methods are public rather than private for this reason.
+
 #### Attributes
 - `data-item-selector` (string, required): CSS selector matching each result item.
 - `data-item-id-selector` (string, required): Attribute selector for the unique item ID.
