@@ -26,6 +26,7 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
     #emptyResultsSelector;
     #resultsSelector;
     #searchErrorSelector;
+    #searchLoadingSelector;
 
     constructor() {
         super();
@@ -40,6 +41,7 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
         this.#emptyResultsSelector = readAttribute(this, 'data-empty-results-selector');
         this.#resultsSelector = readAttribute(this, 'data-results-selector');
         this.#searchErrorSelector = readAttribute(this, 'data-search-error-selector');
+        this.#searchLoadingSelector = readAttribute(this, 'data-search-loading-selector');
     }
 
     connectedCallback() {
@@ -78,7 +80,7 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
      * Shows/hides items and reorders DOM nodes to match the given order.
      * @param {string[]} orderedIds
      * @param {{ searchTerm: string, activeFilters: Record<string, string[]>,
-     *     searchError: boolean }} [context]
+     *     searchError: boolean, searchLoading: boolean }} [context]
      */
     updateResults(orderedIds, context) {
         this.#ensureCollected();
@@ -112,6 +114,7 @@ export default class FacetedSearchResultUpdater extends HTMLElement {
 
         this.#toggleEmptyState(orderedIds.length > 0);
         this.#toggleSelector(this.#searchErrorSelector, context?.searchError);
+        this.#toggleSelector(this.#searchLoadingSelector, context?.searchLoading);
     }
 
     /**

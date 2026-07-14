@@ -53,6 +53,9 @@ export default class FacetedSearchModel {
     /** @type {boolean} whether the last endpoint call failed */
     #searchError = false;
 
+    /** @type {boolean} whether an endpoint call is in flight */
+    #searchLoading = false;
+
     /** @type {AbortController|null} controller for the in-flight endpoint call */
     #pendingSearchController = null;
 
@@ -235,7 +238,8 @@ export default class FacetedSearchModel {
 
     /**
      * Runs the endpoint lookup, aborting any prior in-flight one. Notifies
-     * on settle; superseded/stale responses are dropped silently.
+     * when loading starts and again on settle; superseded/stale responses
+     * are dropped silently.
      * @param {string} term
      */
     async #fetchAndApplySearchedIds(term) {
@@ -245,12 +249,15 @@ export default class FacetedSearchModel {
             this.#pendingSearchController = null;
             this.#searchedIds = null;
             this.#searchError = false;
+            this.#searchLoading = false;
             this.#notifyChange();
             return;
         }
 
         const controller = new AbortController();
         this.#pendingSearchController = controller;
+        this.#searchLoading = true;
+        this.#notifyChange();
 
         try {
             const ids = await this.#callEndpoint(term, controller.signal);
@@ -265,6 +272,7 @@ export default class FacetedSearchModel {
             this.#searchError = true;
             console.error('FacetedSearchModel: search endpoint request failed.', error);
         }
+        this.#searchLoading = false;
         this.#notifyChange();
     }
 
@@ -361,5 +369,10 @@ export default class FacetedSearchModel {
     /** @returns {boolean} whether the last endpoint call failed */
     get searchError() {
         return this.#searchError;
+    }
+
+    /** @returns {boolean} whether an endpoint call is in flight */
+    get searchLoading() {
+        return this.#searchLoading;
     }
 }

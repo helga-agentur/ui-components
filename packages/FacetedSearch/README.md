@@ -81,7 +81,8 @@ internal model, delegates updates, and restores state from the URL hash.
 - `data-search-get-endpoint` (string, optional): URL of a remote search endpoint, used instead of
   the local MiniSearch index. Sends `GET <data-search-get-endpoint>?<param>=<term>` on each search
   term change and expects `{ "ids": ["1", "2", ...] }` in response, ordered by relevance. Stale,
-  superseded requests are dropped; on error, results are cleared, the error is logged, and
+  superseded requests are dropped; `data-search-loading-selector` (if configured) is shown while
+  a request is in flight. On error, results are cleared, the error is logged, and
   `data-search-error-selector` (if configured) is shown.
 - `data-search-get-param` (string, optional): Name of the query parameter the search term is sent
   as. Defaults to `q`. Only relevant with `data-search-get-endpoint`.
@@ -164,6 +165,8 @@ reorders them to match relevance order, and toggles an empty-state message.
 - `data-search-error-selector` (string, optional): CSS selector for an error message element,
   shown when `data-search-get-endpoint` requests fail. Results are cleared at the same time
   (triggering `data-empty-results-selector` too, if configured).
+- `data-search-loading-selector` (string, optional): CSS selector for a loading indicator
+  element, shown while a `data-search-get-endpoint` request is in flight.
 
 #### Structure
 Must wrap the result reader and contain the empty-state element (if configured). The result

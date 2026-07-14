@@ -276,6 +276,7 @@ export default class FacetedSearch extends HTMLElement {
                 searchTerm: this.#model.searchTerm,
                 activeFilters: this.#model.activeFilters,
                 searchError: this.#model.searchError,
+                searchLoading: this.#model.searchLoading,
             });
         });
 

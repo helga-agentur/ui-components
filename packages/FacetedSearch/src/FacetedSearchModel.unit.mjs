@@ -316,6 +316,21 @@ test.serial('does not update visible ids until the endpoint resolves', async (t)
     t.deepEqual(model.getVisibleIds(), ['2', '3']);
 });
 
+test.serial('searchLoading is true while in flight, false once settled', async (t) => {
+    const deferred = createDeferred();
+    const restore = mockFetch(() => deferred.promise);
+    const model = createEndpointTestModel();
+
+    t.false(model.searchLoading);
+    const pending = model.setSearchTerm('hat');
+    t.true(model.searchLoading);
+
+    deferred.resolve({ ok: true, json: async () => ({ ids: ['2'] }) });
+    await pending;
+    restore();
+    t.false(model.searchLoading);
+});
+
 test.serial('resolving the remote search triggers onChange', async (t) => {
     const deferred = createDeferred();
     const restore = mockFetch(() => deferred.promise);
@@ -324,12 +339,12 @@ test.serial('resolving the remote search triggers onChange', async (t) => {
     model.onChange(() => { emitted += 1; });
 
     const pending = model.setSearchTerm('hat');
-    t.is(emitted, 0);
+    t.is(emitted, 1); // loading started
 
     deferred.resolve({ ok: true, json: async () => ({ ids: ['2'] }) });
     await pending;
     restore();
-    t.is(emitted, 1);
+    t.is(emitted, 2); // settled
 });
 
 test.serial('drops a stale response when a newer search term resolves first', async (t) => {
@@ -362,8 +377,9 @@ test.serial('sets searchError and clears results on endpoint failure, without th
     restore();
 
     t.true(model.searchError);
+    t.false(model.searchLoading);
     t.deepEqual(model.getVisibleIds(), []);
-    t.is(emitted, 1);
+    t.is(emitted, 2); // loading started, then settled
 });
 
 test.serial('clearing the search term while a request is in flight resets synchronously', async (t) => {
