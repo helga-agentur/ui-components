@@ -1,6 +1,6 @@
 {
   "name": "@helga-agency/faceted-search",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Web components for client-side faceted filtering and full-text search over server-rendered content.",
   "main": "src/main.mjs",
   "scripts": {
