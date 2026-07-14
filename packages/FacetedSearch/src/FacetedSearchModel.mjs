@@ -1,13 +1,10 @@
 /**
- * Core business logic for faceted search: holds state, runs itemsjs for filtering
- * and MiniSearch (or a remote endpoint) for full-text search, computes expected
- * result counts per filter value.
+ * Core business logic for faceted search: state, itemsjs filtering, MiniSearch
+ * or remote-endpoint full-text search, expected result counts.
  *
- * Full-text search is local via MiniSearch by default, or remote via GET request
- * when searchGetEndpoint is set. In remote mode, setSearchTerm returns a promise
- * the caller can await (e.g. for a loading/error state) instead of relying on
- * onChange, which stays reserved for synchronous state changes. Stale requests
- * are dropped silently; genuine failures are rethrown and clear results.
+ * setSearchTerm is fire-and-forget even in remote mode: onChange fires once
+ * the lookup settles, searchError reflects the outcome. Stale/superseded
+ * requests are dropped silently.
  */
 import itemsjs from 'itemsjs';
 import MiniSearch from 'minisearch';
@@ -52,6 +49,9 @@ export default class FacetedSearchModel {
 
     /** @type {string[]|null} IDs from the most recently resolved endpoint call */
     #searchedIds = null;
+
+    /** @type {boolean} whether the last endpoint call failed */
+    #searchError = false;
 
     /** @type {AbortController|null} controller for the in-flight endpoint call */
     #pendingSearchController = null;
@@ -219,10 +219,8 @@ export default class FacetedSearchModel {
     }
 
     /**
-     * In local mode, recomputes and notifies immediately, returns undefined.
-     * In remote mode, kicks off the endpoint lookup and returns a promise the
-     * caller can await instead; resolves once applied, rethrows genuine
-     * failures. Does not call onChange itself in that case.
+     * Fire-and-forget in both modes. Returned promise never rejects; it's
+     * only there for callers that want to await settling (e.g. tests).
      * @param {string} term
      * @returns {Promise<void>|undefined}
      */
@@ -236,12 +234,9 @@ export default class FacetedSearchModel {
     }
 
     /**
-     * Runs the endpoint lookup for term and applies the result. Aborts the
-     * previous in-flight request; a response superseded by a newer call is
-     * silently ignored. On genuine failure, clears results (getVisibleIds
-     * returns empty) and rethrows for the caller to show an error state.
+     * Runs the endpoint lookup, aborting any prior in-flight one. Notifies
+     * on settle; superseded/stale responses are dropped silently.
      * @param {string} term
-     * @returns {Promise<void>}
      */
     async #fetchAndApplySearchedIds(term) {
         if (this.#pendingSearchController) this.#pendingSearchController.abort();
@@ -249,6 +244,8 @@ export default class FacetedSearchModel {
         if (!term) {
             this.#pendingSearchController = null;
             this.#searchedIds = null;
+            this.#searchError = false;
+            this.#notifyChange();
             return;
         }
 
@@ -260,12 +257,15 @@ export default class FacetedSearchModel {
             if (this.#pendingSearchController !== controller) return;
             this.#pendingSearchController = null;
             this.#searchedIds = ids;
+            this.#searchError = false;
         } catch (error) {
             if (this.#pendingSearchController !== controller) return;
             this.#pendingSearchController = null;
             this.#searchedIds = [];
-            throw error;
+            this.#searchError = true;
+            console.error('FacetedSearchModel: search endpoint request failed.', error);
         }
+        this.#notifyChange();
     }
 
     /**
@@ -356,5 +356,10 @@ export default class FacetedSearchModel {
     /** @returns {string} */
     get searchTerm() {
         return this.#searchTerm;
+    }
+
+    /** @returns {boolean} whether the last endpoint call failed */
+    get searchError() {
+        return this.#searchError;
     }
 }

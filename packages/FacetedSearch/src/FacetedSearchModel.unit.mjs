@@ -316,7 +316,7 @@ test.serial('does not update visible ids until the endpoint resolves', async (t)
     t.deepEqual(model.getVisibleIds(), ['2', '3']);
 });
 
-test.serial('resolving the remote search does not trigger onChange itself', async (t) => {
+test.serial('resolving the remote search triggers onChange', async (t) => {
     const deferred = createDeferred();
     const restore = mockFetch(() => deferred.promise);
     const model = createEndpointTestModel();
@@ -329,8 +329,7 @@ test.serial('resolving the remote search does not trigger onChange itself', asyn
     deferred.resolve({ ok: true, json: async () => ({ ids: ['2'] }) });
     await pending;
     restore();
-    // Resolving the fetch doesn't notify - the caller re-renders after awaiting.
-    t.is(emitted, 0);
+    t.is(emitted, 1);
 });
 
 test.serial('drops a stale response when a newer search term resolves first', async (t) => {
@@ -353,13 +352,18 @@ test.serial('drops a stale response when a newer search term resolves first', as
     t.deepEqual(model.getVisibleIds(), ['2']);
 });
 
-test.serial('rethrows genuine failures and clears results from the endpoint', async (t) => {
+test.serial('sets searchError and clears results on endpoint failure, without throwing', async (t) => {
     const restore = mockFetch(async () => ({ ok: false, status: 500 }));
     const model = createEndpointTestModel();
-    const error = await t.throwsAsync(() => model.setSearchTerm('hat'));
+    let emitted = 0;
+    model.onChange(() => { emitted += 1; });
+
+    await t.notThrowsAsync(() => model.setSearchTerm('hat'));
     restore();
-    t.regex(error.message, /responded with status 500/);
+
+    t.true(model.searchError);
     t.deepEqual(model.getVisibleIds(), []);
+    t.is(emitted, 1);
 });
 
 test.serial('clearing the search term while a request is in flight resets synchronously', async (t) => {

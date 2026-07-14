@@ -38,12 +38,6 @@ export default class FacetedSearch extends HTMLElement {
     /** @type {string} name of the query parameter the search term is sent as */
     #searchGetParam;
 
-    /** @type {string} most recent search term, to drop stale remote resolutions */
-    #latestSearchTerm = '';
-
-    /** @type {boolean} whether the last remote search request failed */
-    #searchError = false;
-
     constructor() {
         super();
         this.#fuzzy = readAttribute(this, 'data-fuzzy-search', {
@@ -202,8 +196,6 @@ export default class FacetedSearch extends HTMLElement {
     #buildModel() {
         if (!this.#readerComponent) return;
 
-        this.#searchError = false;
-
         const items = this.#readerComponent.getItemData();
 
         // Derive filter and search configs from the collected item data
@@ -232,32 +224,10 @@ export default class FacetedSearch extends HTMLElement {
     /** @param {string} term */
     #handleSearchTermChange(term) {
         if (!this.#model) return;
-        this.#applySearchTerm(term);
+        this.#model.setSearchTerm(term);
         if (this.#searchComponent?.propagateToUrl) {
             this.#writeHash('search', term ? [term] : []);
         }
-    }
-
-    /**
-     * Sets the term on the model. In remote mode, reacts once the returned
-     * promise settles: flags searchError and re-renders. Fire-and-forget.
-     * Drops resolutions superseded by a newer term.
-     * @param {string} term
-     */
-    #applySearchTerm(term) {
-        this.#latestSearchTerm = term;
-        const pending = this.#model.setSearchTerm(term);
-        if (!pending) return;
-
-        pending
-            .then(() => { this.#searchError = false; })
-            .catch((error) => {
-                this.#searchError = true;
-                console.error('FacetedSearch: search endpoint request failed.', error);
-            })
-            .finally(() => {
-                if (this.#latestSearchTerm === term) this.#updateChildren();
-            });
     }
 
     /**
@@ -305,7 +275,7 @@ export default class FacetedSearch extends HTMLElement {
             component.updateResults(visibleIds, {
                 searchTerm: this.#model.searchTerm,
                 activeFilters: this.#model.activeFilters,
-                searchError: this.#searchError,
+                searchError: this.#model.searchError,
             });
         });
 
@@ -327,7 +297,7 @@ export default class FacetedSearch extends HTMLElement {
 
         if (hashData.search) {
             const term = hashData.search[0];
-            this.#applySearchTerm(term);
+            this.#model.setSearchTerm(term);
             if (this.#searchComponent) this.#searchComponent.setSearchTerm(term);
         }
 
