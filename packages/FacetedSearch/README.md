@@ -72,9 +72,20 @@ Orchestrator element. Wraps all other components. Manages child registration, cr
 internal model, delegates updates, and restores state from the URL hash.
 
 #### Attributes
-- `data-fuzzy-search` (boolean, optional): Enables fuzzy matching for full-text search.
+- `data-fuzzy-search` (boolean, optional): Enables fuzzy matching for full-text search. Ignored
+  when `data-search-get-endpoint` is set (matching is left to the endpoint).
 - `data-order-by-relevance` (boolean, optional): Orders results by search relevance when a
-  search term is active. When the search term is cleared, DOM order is restored.
+  search term is active. When the search term is cleared, DOM order is restored. When
+  `data-search-get-endpoint` is set, this preserves the endpoint's returned order instead of
+  MiniSearch's.
+- `data-search-get-endpoint` (string, optional): URL of a remote search endpoint, used instead of
+  the local MiniSearch index. Sends `GET <data-search-get-endpoint>?<param>=<term>` on each search
+  term change and expects `{ "ids": ["1", "2", ...] }` in response, ordered by relevance. Stale,
+  superseded requests are dropped; `data-search-loading-selector` (if configured) is shown while
+  a request is in flight. On error, results are cleared, the error is logged, and
+  `data-search-error-selector` (if configured) is shown.
+- `data-search-get-param` (string, optional): Name of the query parameter the search term is sent
+  as. Defaults to `q`. Only relevant with `data-search-get-endpoint`.
 
 
 ### `<faceted-search-input>`
@@ -144,6 +155,10 @@ Must contain the result item elements that match `data-item-selector`.
 Receives ordered visible IDs from the orchestrator and updates the DOM: shows/hides items,
 reorders them to match relevance order, and toggles an empty-state message.
 
+The `FacetedSearchResultUpdater` class is meant to be subclassed when a project needs different
+DOM handling (e.g. a different layout depending on whether a search term is active). See the
+class doc comment: its fields/methods are public rather than private for this reason.
+
 #### Attributes
 - `data-item-selector` (string, required): CSS selector matching each result item.
 - `data-item-id-selector` (string, required): Attribute selector for the unique item ID.
@@ -151,6 +166,11 @@ reorders them to match relevance order, and toggles an empty-state message.
   element. Hidden when results exist, shown when empty.
 - `data-results-selector` (string, optional): CSS selector for the results wrapper element.
   Hidden when no results, shown when results exist.
+- `data-search-error-selector` (string, optional): CSS selector for an error message element,
+  shown when `data-search-get-endpoint` requests fail. Results are cleared at the same time
+  (triggering `data-empty-results-selector` too, if configured).
+- `data-search-loading-selector` (string, optional): CSS selector for a loading indicator
+  element, shown while a `data-search-get-endpoint` request is in flight.
 
 #### Structure
 Must wrap the result reader and contain the empty-state element (if configured). The result

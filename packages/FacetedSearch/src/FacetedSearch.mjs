@@ -32,6 +32,12 @@ export default class FacetedSearch extends HTMLElement {
     /** @type {boolean} */
     #orderByRelevance;
 
+    /** @type {string|null} URL of a remote GET search endpoint, replacing local MiniSearch */
+    #searchGetEndpoint;
+
+    /** @type {string} name of the query parameter the search term is sent as */
+    #searchGetParam;
+
     constructor() {
         super();
         this.#fuzzy = readAttribute(this, 'data-fuzzy-search', {
@@ -39,6 +45,10 @@ export default class FacetedSearch extends HTMLElement {
         });
         this.#orderByRelevance = readAttribute(this, 'data-order-by-relevance', {
             transform: (value) => value !== null,
+        });
+        this.#searchGetEndpoint = readAttribute(this, 'data-search-get-endpoint');
+        this.#searchGetParam = readAttribute(this, 'data-search-get-param', {
+            transform: (value) => value || 'q',
         });
     }
 
@@ -200,6 +210,8 @@ export default class FacetedSearch extends HTMLElement {
             searchConfigs,
             fuzzy: this.#fuzzy,
             orderByRelevance: this.#orderByRelevance,
+            searchGetEndpoint: this.#searchGetEndpoint,
+            searchGetParam: this.#searchGetParam,
         });
 
         // Restore state before attaching the change listener to avoid
@@ -263,6 +275,8 @@ export default class FacetedSearch extends HTMLElement {
             component.updateResults(visibleIds, {
                 searchTerm: this.#model.searchTerm,
                 activeFilters: this.#model.activeFilters,
+                searchError: this.#model.searchError,
+                searchLoading: this.#model.searchLoading,
             });
         });
 

@@ -1,6 +1,8 @@
 import test from 'ava';
 import FacetedSearchModel from './FacetedSearchModel.mjs';
 
+/* global globalThis */
+
 /**
  * Creates a model with a standard test dataset.
  * Items: 4 products with category and color filter fields, plus searchable name/description.
@@ -242,6 +244,178 @@ test('works with only search configs', (t) => {
     });
     model.setSearchTerm('Alpha');
     t.deepEqual(model.getVisibleIds(), ['1']);
+});
+
+// Remote search (fetchSearchIds)
+
+/** Creates a promise plus its resolve function, for manual resolution in tests. */
+const createDeferred = () => {
+    let resolve;
+    const promise = new Promise((res) => { resolve = res; });
+    return { promise, resolve };
+};
+
+/**
+ * Replaces global fetch for the duration of a test. Endpoint tests must run
+ * .serial since they share this global — restore() undoes it.
+ * @param {Function} handler - (url) => Response-like { ok, status, json }
+ * @returns {Function} restore
+ */
+const mockFetch = (handler) => {
+    const original = globalThis.fetch;
+    globalThis.fetch = handler;
+    return () => { globalThis.fetch = original; };
+};
+
+/** @param {string} url */
+const termFromUrl = (url) => new URLSearchParams(url.split('?')[1]).get('q');
+
+const createEndpointTestModel = (options = {}) => {
+    const items = [
+        { id: '1', filterFields: { category: ['shoes'] }, searchFields: {} },
+        { id: '2', filterFields: { category: ['hats'] }, searchFields: {} },
+        { id: '3', filterFields: { category: ['hats'] }, searchFields: {} },
+    ];
+    return new FacetedSearchModel({
+        items,
+        filterConfigs: [{ name: 'category' }],
+        searchConfigs: [],
+        searchGetEndpoint: '/api/search',
+        ...options,
+    });
+};
+
+// These tests stub the shared global fetch, so they must run .serial.
+
+test.serial('uses searchGetEndpoint instead of MiniSearch when provided', async (t) => {
+    const calls = [];
+    const restore = mockFetch(async (url) => {
+        calls.push(url);
+        return { ok: true, json: async () => ({ ids: ['2', '3'] }) };
+    });
+    const model = createEndpointTestModel();
+    await model.setSearchTerm('hat');
+    restore();
+
+    t.deepEqual(calls, ['/api/search?q=hat']);
+    t.deepEqual(model.getVisibleIds(), ['2', '3']);
+});
+
+test.serial('does not update visible ids until the endpoint resolves', async (t) => {
+    const deferred = createDeferred();
+    const restore = mockFetch(() => deferred.promise);
+    const model = createEndpointTestModel();
+
+    const pending = model.setSearchTerm('hat');
+    // Still unresolved: falls back to original order (no cached result yet)
+    t.deepEqual(model.getVisibleIds(), ['1', '2', '3']);
+
+    deferred.resolve({ ok: true, json: async () => ({ ids: ['2', '3'] }) });
+    await pending;
+    restore();
+    t.deepEqual(model.getVisibleIds(), ['2', '3']);
+});
+
+test.serial('searchLoading is true while in flight, false once settled', async (t) => {
+    const deferred = createDeferred();
+    const restore = mockFetch(() => deferred.promise);
+    const model = createEndpointTestModel();
+
+    t.false(model.searchLoading);
+    const pending = model.setSearchTerm('hat');
+    t.true(model.searchLoading);
+
+    deferred.resolve({ ok: true, json: async () => ({ ids: ['2'] }) });
+    await pending;
+    restore();
+    t.false(model.searchLoading);
+});
+
+test.serial('resolving the remote search triggers onChange', async (t) => {
+    const deferred = createDeferred();
+    const restore = mockFetch(() => deferred.promise);
+    const model = createEndpointTestModel();
+    let emitted = 0;
+    model.onChange(() => { emitted += 1; });
+
+    const pending = model.setSearchTerm('hat');
+    t.is(emitted, 1); // loading started
+
+    deferred.resolve({ ok: true, json: async () => ({ ids: ['2'] }) });
+    await pending;
+    restore();
+    t.is(emitted, 2); // settled
+});
+
+test.serial('drops a stale response when a newer search term resolves first', async (t) => {
+    const deferred = {};
+    const restore = mockFetch((url) => new Promise((resolve) => {
+        deferred[termFromUrl(url)] = resolve;
+    }));
+    const model = createEndpointTestModel();
+
+    const pendingA = model.setSearchTerm('a');
+    const pendingB = model.setSearchTerm('b');
+
+    // 'b' resolves first even though 'a' was requested first.
+    deferred.b({ ok: true, json: async () => ({ ids: ['2'] }) });
+    await pendingB;
+    deferred.a({ ok: true, json: async () => ({ ids: ['3'] }) });
+    await pendingA;
+    restore();
+
+    t.deepEqual(model.getVisibleIds(), ['2']);
+});
+
+test.serial('sets searchError and clears results on endpoint failure, without throwing', async (t) => {
+    const restore = mockFetch(async () => ({ ok: false, status: 500 }));
+    const model = createEndpointTestModel();
+    let emitted = 0;
+    model.onChange(() => { emitted += 1; });
+
+    await t.notThrowsAsync(() => model.setSearchTerm('hat'));
+    restore();
+
+    t.true(model.searchError);
+    t.false(model.searchLoading);
+    t.deepEqual(model.getVisibleIds(), []);
+    t.is(emitted, 2); // loading started, then settled
+});
+
+test.serial('clearing the search term while a request is in flight resets synchronously', async (t) => {
+    const deferred = createDeferred();
+    const restore = mockFetch(() => deferred.promise);
+    const model = createEndpointTestModel();
+
+    const pending = model.setSearchTerm('hat');
+    model.setSearchTerm('');
+    t.deepEqual(model.getVisibleIds(), ['1', '2', '3']);
+
+    // A late resolution of the abandoned request must not resurrect stale results.
+    deferred.resolve({ ok: true, json: async () => ({ ids: ['2'] }) });
+    await pending;
+    restore();
+    t.deepEqual(model.getVisibleIds(), ['1', '2', '3']);
+});
+
+test.serial('combines remote search results with active filters', async (t) => {
+    const restore = mockFetch(async () => ({ ok: true, json: async () => ({ ids: ['1', '2'] }) }));
+    const model = createEndpointTestModel();
+    model.setFilter('category', 'hats', true);
+    await model.setSearchTerm('x');
+    restore();
+
+    // Search: 1, 2. Filter: hats → 2, 3. Intersection: 2
+    t.deepEqual(model.getVisibleIds(), ['2']);
+});
+
+test.serial('orderByRelevance preserves the endpoint order in remote mode', async (t) => {
+    const restore = mockFetch(async () => ({ ok: true, json: async () => ({ ids: ['3', '1'] }) }));
+    const model = createEndpointTestModel({ orderByRelevance: true });
+    await model.setSearchTerm('x');
+    restore();
+
+    t.deepEqual(model.getVisibleIds(), ['3', '1']);
 });
 
 // Filters without search configs

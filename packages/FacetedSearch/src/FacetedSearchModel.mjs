@@ -1,12 +1,10 @@
 /**
- * Core business logic for faceted search: holds state, runs combined queries
- * (itemsjs for filtering, MiniSearch for full-text search), computes expected
- * result counts per filter value. Pure class, no DOM.
+ * Core business logic for faceted search: state, itemsjs filtering, MiniSearch
+ * or remote-endpoint full-text search, expected result counts.
  *
- * Integration follows the recommended pattern from itemsjs docs:
- * MiniSearch handles full-text search and returns matching IDs;
- * itemsjs receives those IDs via its `ids` parameter and handles
- * faceted filtering + aggregation on that subset.
+ * setSearchTerm is fire-and-forget even in remote mode: onChange fires once
+ * the lookup settles, searchError reflects the outcome. Stale/superseded
+ * requests are dropped silently.
  */
 import itemsjs from 'itemsjs';
 import MiniSearch from 'minisearch';
@@ -43,6 +41,24 @@ export default class FacetedSearchModel {
     /** @type {object[]} search field configs with boost */
     #searchConfigs;
 
+    /** @type {string|null} URL of a remote GET search endpoint, replacing local MiniSearch */
+    #searchGetEndpoint;
+
+    /** @type {string} name of the query parameter the search term is sent as */
+    #searchGetParam;
+
+    /** @type {string[]|null} IDs from the most recently resolved endpoint call */
+    #searchedIds = null;
+
+    /** @type {boolean} whether the last endpoint call failed */
+    #searchError = false;
+
+    /** @type {boolean} whether an endpoint call is in flight */
+    #searchLoading = false;
+
+    /** @type {AbortController|null} controller for the in-flight endpoint call */
+    #pendingSearchController = null;
+
     /** @type {Function[]} */
     #changeListeners = [];
 
@@ -50,9 +66,15 @@ export default class FacetedSearchModel {
      * @param {object} options
      * @param {object[]} options.items - [{ id, filterFields: {}, searchFields: {} }]
      * @param {object[]} options.filterConfigs - [{ name }] — filter names to register
-     * @param {object[]} options.searchConfigs - [{ field, boost }] — search fields with boost
-     * @param {boolean} options.fuzzy - Enable fuzzy matching in MiniSearch
-     * @param {boolean} options.orderByRelevance - Order by MiniSearch relevance when searching
+     * @param {object[]} options.searchConfigs - [{ field, boost }] — MiniSearch fields with boost
+     *     (ignored when searchGetEndpoint is set)
+     * @param {boolean} options.fuzzy - Enable fuzzy matching in MiniSearch (ignored when
+     *     searchGetEndpoint is set)
+     * @param {boolean} options.orderByRelevance - Order by search relevance when searching
+     * @param {string|null} options.searchGetEndpoint - URL of a remote search endpoint; sends
+     *     `GET <searchGetEndpoint>?<searchGetParam>=<term>`, expects { ids: string[] }, and
+     *     replaces MiniSearch when set
+     * @param {string} options.searchGetParam - Query param name for the search term
      */
     constructor({
         items,
@@ -60,6 +82,8 @@ export default class FacetedSearchModel {
         searchConfigs = [],
         fuzzy = false,
         orderByRelevance = false,
+        searchGetEndpoint = null,
+        searchGetParam = 'q',
     }) {
         this.#items = items;
         this.#fuzzy = fuzzy;
@@ -67,9 +91,11 @@ export default class FacetedSearchModel {
         this.#originalOrder = items.map((item) => item.id);
         this.#filterFieldNames = filterConfigs.map((config) => config.name);
         this.#searchConfigs = searchConfigs;
+        this.#searchGetEndpoint = searchGetEndpoint;
+        this.#searchGetParam = searchGetParam;
 
         this.#buildFilterEngine();
-        this.#buildSearchEngine();
+        if (!this.#searchGetEndpoint) this.#buildSearchEngine();
     }
 
     #buildFilterEngine() {
@@ -112,11 +138,15 @@ export default class FacetedSearchModel {
     }
 
     /**
-     * Returns MiniSearch result IDs ordered by relevance, or null if no search is active.
+     * Returns search result IDs ordered by relevance, or null if no search is active.
+     * In remote mode, returns the last resolved endpoint result (see
+     * fetchAndApplySearchedIds).
      * @returns {string[]|null}
      */
     #getSearchedIds() {
-        if (!this.#searchTerm || !this.#searchEngine) return null;
+        if (!this.#searchTerm) return null;
+        if (this.#searchGetEndpoint) return this.#searchedIds;
+        if (!this.#searchEngine) return null;
 
         const boostConfig = {};
         this.#searchConfigs.forEach((config) => {
@@ -191,10 +221,76 @@ export default class FacetedSearchModel {
         return resultIds;
     }
 
-    /** @param {string} term */
+    /**
+     * Fire-and-forget in both modes. Returned promise never rejects; it's
+     * only there for callers that want to await settling (e.g. tests).
+     * @param {string} term
+     * @returns {Promise<void>|undefined}
+     */
     setSearchTerm(term) {
         this.#searchTerm = term;
+        if (!this.#searchGetEndpoint) {
+            this.#notifyChange();
+            return undefined;
+        }
+        return this.#fetchAndApplySearchedIds(term);
+    }
+
+    /**
+     * Runs the endpoint lookup, aborting any prior in-flight one. Notifies
+     * when loading starts and again on settle; superseded/stale responses
+     * are dropped silently.
+     * @param {string} term
+     */
+    async #fetchAndApplySearchedIds(term) {
+        if (this.#pendingSearchController) this.#pendingSearchController.abort();
+
+        if (!term) {
+            this.#pendingSearchController = null;
+            this.#searchedIds = null;
+            this.#searchError = false;
+            this.#searchLoading = false;
+            this.#notifyChange();
+            return;
+        }
+
+        const controller = new AbortController();
+        this.#pendingSearchController = controller;
+        this.#searchLoading = true;
         this.#notifyChange();
+
+        try {
+            const ids = await this.#callEndpoint(term, controller.signal);
+            if (this.#pendingSearchController !== controller) return;
+            this.#pendingSearchController = null;
+            this.#searchedIds = ids;
+            this.#searchError = false;
+        } catch (error) {
+            if (this.#pendingSearchController !== controller) return;
+            this.#pendingSearchController = null;
+            this.#searchedIds = [];
+            this.#searchError = true;
+            console.error('FacetedSearchModel: search endpoint request failed.', error);
+        }
+        this.#searchLoading = false;
+        this.#notifyChange();
+    }
+
+    /**
+     * Queries searchGetEndpoint for matching item IDs, expects { ids: string[] }.
+     * @param {string} term
+     * @param {AbortSignal} signal
+     * @returns {Promise<string[]>}
+     */
+    async #callEndpoint(term, signal) {
+        const params = new URLSearchParams({ [this.#searchGetParam]: term });
+        const url = `${this.#searchGetEndpoint}?${params}`;
+        const response = await fetch(url, { signal });
+        if (!response.ok) {
+            throw new Error(`FacetedSearchModel: search endpoint ${url} responded with status ${response.status}.`);
+        }
+        const { ids } = await response.json();
+        return ids;
     }
 
     /**
@@ -268,5 +364,15 @@ export default class FacetedSearchModel {
     /** @returns {string} */
     get searchTerm() {
         return this.#searchTerm;
+    }
+
+    /** @returns {boolean} whether the last endpoint call failed */
+    get searchError() {
+        return this.#searchError;
+    }
+
+    /** @returns {boolean} whether an endpoint call is in flight */
+    get searchLoading() {
+        return this.#searchLoading;
     }
 }
