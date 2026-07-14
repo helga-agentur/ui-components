@@ -96,8 +96,9 @@ export default class extends HTMLElement {
 
     calculateButtonVisibility() {
         const contentIsLarger = this.getContentWidth() > this.getElementWidth();
-        const atStart = this.scrollLeft === 0;
-        const atEnd = this.scrollLeft === this.getContentWidth() - this.getElementWidth();
+        const maxScroll = this.getContentWidth() - this.getElementWidth();
+        const atStart = this.scrollLeft <= 1;
+        const atEnd = this.scrollLeft >= maxScroll - 1;
         this.isPreviousButtonVisible = contentIsLarger && !atStart;
         this.isNextButtonVisible = contentIsLarger && !atEnd;
     }
