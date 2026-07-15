@@ -96,7 +96,6 @@ export default class extends HTMLElement {
 
     calculateButtonVisibility() {
         const contentIsLarger = this.getContentWidth() > this.getElementWidth();
-
         // Detect the start/end edges via sentinels mobile sub-pixel scroll never lands on the exact end
         const maxScroll = this.getContentWidth() - this.getElementWidth();
         const atStart = this.scrollLeft <= 1;
